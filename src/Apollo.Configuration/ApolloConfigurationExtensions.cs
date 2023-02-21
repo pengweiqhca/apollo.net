@@ -2,7 +2,6 @@
 using Com.Ctrip.Framework.Apollo.Core;
 using Com.Ctrip.Framework.Apollo.Enums;
 using Com.Ctrip.Framework.Apollo.Internals;
-using Com.Ctrip.Framework.Apollo.Spi;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.Configuration
@@ -21,8 +20,6 @@ namespace Microsoft.Extensions.Configuration
                 throw new InvalidOperationException("Do not repeat init apollo.");
 
             var repositoryFactory = new ConfigRepositoryFactory(options ?? throw new ArgumentNullException(nameof(options)));
-
-            ApolloConfigurationManagerHelper.SetApolloOptions(repositoryFactory);
 
             var acb = new ApolloConfigurationBuilder(builder, repositoryFactory);
             if (options is ApolloOptions { Namespaces: { } } ao)
@@ -101,8 +98,6 @@ namespace Com.Ctrip.Framework.Apollo
             else
             {
                 builder.Add(new ApolloConfigurationProvider(sectionKey, configRepository));
-
-                ApolloConfigurationManagerHelper.Manager.Registry.Register(@namespace, new DefaultConfigFactory(builder.ConfigRepositoryFactory));
             }
 
             return builder;

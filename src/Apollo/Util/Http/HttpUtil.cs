@@ -15,12 +15,8 @@ public class HttpUtil : IDisposable
         Exception e;
         try
         {
-#if NET40
-            using var cts = new CancellationTokenSource();
-            cts.CancelAfter(timeout);
-#else
             using var cts = new CancellationTokenSource(timeout);
-#endif
+
             var httpClient = new HttpClient(_options.HttpMessageHandler, false)
             {
                 Timeout = TimeSpan.FromMilliseconds(timeout > 0 ? timeout : _options.Timeout)
@@ -30,21 +26,16 @@ public class HttpUtil : IDisposable
                 foreach (var header in Signature.BuildHttpHeaders(url, _options.AppId, _options.Secret!))
                     httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value);
 
-            using var response = await Timeout(httpClient.GetAsync(url, cts.Token), timeout, cts).ConfigureAwait(false);
+            using var response = await httpClient.GetAsync(url, cts.Token).ConfigureAwait(false);
             switch (response.StatusCode)
             {
                 case HttpStatusCode.OK:
-                    {
-#if NET40
-                        var task = response.Content.ReadAsAsync<T>();
-#elif NETFRAMEWORK
-                        var task = response.Content.ReadAsAsync<T>(cts.Token);
-#else
-                        var task = response.Content.ReadFromJsonAsync<T>(
-                            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, DictionaryKeyPolicy = JsonNamingPolicy.CamelCase }, cts.Token);
-#endif
-                        return new(response.StatusCode, await task.ConfigureAwait(false));
-                    }
+                    return new(response.StatusCode, await response.Content.ReadFromJsonAsync<T>(
+                        new JsonSerializerOptions
+                        {
+                            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                            DictionaryKeyPolicy = JsonNamingPolicy.CamelCase
+                        }, cts.Token).ConfigureAwait(false));
                 case HttpStatusCode.NotModified:
                     return new(response.StatusCode);
             }
@@ -60,18 +51,4 @@ public class HttpUtil : IDisposable
     }
 
     public void Dispose() => _options.Dispose();
-
-    private static async Task<T> Timeout<T>(Task<T> task, int millisecondsDelay, CancellationTokenSource cts)
-    {
-#if NET40
-        if (await TaskEx.WhenAny(task, TaskEx.Delay(millisecondsDelay, cts.Token)).ConfigureAwait(false) == task)
-#else
-        if (await Task.WhenAny(task, Task.Delay(millisecondsDelay, cts.Token)).ConfigureAwait(false) == task)
-#endif
-            return task.Result;
-
-        cts.Cancel();
-
-        throw new TimeoutException();
-    }
 }

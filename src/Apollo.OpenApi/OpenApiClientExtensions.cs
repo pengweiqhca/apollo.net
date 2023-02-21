@@ -25,11 +25,8 @@ internal static class OpenApiClientExtensions
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
 
         await AssertResponse(response).ConfigureAwait(false);
-#if NET40
-        return await response.Content.ReadAsAsync<TResponse>().ConfigureAwait(false);
-#else
+
         return await response.Content.ReadAsAsync<TResponse>(cancellationToken).ConfigureAwait(false);
-#endif
     }
 
     public static async Task<bool> Delete(this IOpenApiClient client, string url, CancellationToken cancellationToken)
@@ -58,11 +55,8 @@ internal static class OpenApiClientExtensions
         using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         await AssertResponse(response).ConfigureAwait(false);
-#if NET40
-        return await response.Content.ReadAsAsync<TResponse>().ConfigureAwait(false);
-#else
+
         return await response.Content.ReadAsAsync<TResponse>(cancellationToken).ConfigureAwait(false);
-#endif
     }
 
     public static async Task<bool> Put(this IOpenApiClient client, string url, CancellationToken cancellationToken)
@@ -92,11 +86,8 @@ internal static class OpenApiClientExtensions
         using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         await AssertResponse(response).ConfigureAwait(false);
-#if NET40
-        return await response.Content.ReadAsAsync<TResponse>().ConfigureAwait(false);
-#else
+
         return await response.Content.ReadAsAsync<TResponse>(cancellationToken).ConfigureAwait(false);
-#endif
     }
 
     private static async Task AssertResponse(HttpResponseMessage response)

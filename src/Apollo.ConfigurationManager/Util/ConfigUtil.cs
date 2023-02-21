@@ -29,11 +29,9 @@ public class ConfigUtil : IApolloOptions
 
         var delimiter = GetAppConfig(nameof(SpecialDelimiter))
             ?.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
-#if NET40
-        SpecialDelimiter = delimiter == null ? null : new ReadOnlyCollection<string>(delimiter);
-#else
+
         SpecialDelimiter = delimiter;
-#endif
+
         LocalIp = NetworkInterfaceManager.GetHostIp(PreferSubnet);
     }
 
@@ -130,37 +128,17 @@ public class ConfigUtil : IApolloOptions
     /// </summary>
     /// <returns> the env </returns>
     public Env Env => Enum.TryParse(GetAppConfig(nameof(Env)), true, out Env env) ? env : Env.Dev;
-#if NET40
-    public ReadOnlyCollection<string>? PreferSubnet
-    {
-        get
-        {
-            var servers = GetAppConfig("PreferSubnet")?.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
 
-            return servers == null ? null : new ReadOnlyCollection<string>(servers);
-        }
-    }
-#else
     public IReadOnlyCollection<string>? PreferSubnet => GetAppConfig("PreferSubnet")?.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
-#endif
+
     public string LocalIp { get; }
 
     public string MetaServer => GetAppConfig(nameof(MetaServer)) ?? MetaDomainHelper.GetDomain(Env);
 
     public string? Secret => GetAppConfig(nameof(Secret));
-#if NET40
-    public ReadOnlyCollection<string>? ConfigServer
-    {
-        get
-        {
-            var servers = GetAppConfig("ConfigServer")?.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
 
-            return servers == null ? null : new ReadOnlyCollection<string>(servers);
-        }
-    }
-#else
     public IReadOnlyCollection<string>? ConfigServer => GetAppConfig("ConfigServer")?.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
-#endif
+
     private void InitTimeout()
     {
         var timeout = GetAppConfig(nameof(Timeout));
@@ -205,11 +183,9 @@ public class ConfigUtil : IApolloOptions
     }
 
     public int StartupTimeout => _startupTimeout;
-#if NET40
-    public ReadOnlyCollection<string>? SpecialDelimiter { get; }
-#else
+
     public IReadOnlyCollection<string>? SpecialDelimiter { get; }
-#endif
+
     public HttpMessageHandler HttpMessageHandler => _handler;
 
     public static void UseHttpMessageHandler(HttpMessageHandler handler)
@@ -218,10 +194,6 @@ public class ConfigUtil : IApolloOptions
 
         Interlocked.Exchange(ref _handler, handler).Dispose();
     }
-
-    [Obsolete("请使用UseHttpMessageHandler", true)]
-    public static void UseHttpMessageHandlerFactory(Func<HttpMessageHandler> factory) =>
-        UseHttpMessageHandler(factory());
 
     public static void UseCacheFileProvider(ICacheFileProvider cacheFileProvider) => Interlocked.CompareExchange(ref _cacheFileProvider, cacheFileProvider, null);
 

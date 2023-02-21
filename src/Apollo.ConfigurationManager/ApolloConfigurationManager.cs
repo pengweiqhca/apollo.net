@@ -8,12 +8,7 @@ namespace Com.Ctrip.Framework.Apollo;
 /// <summary>
 /// Entry point for client config use
 /// </summary>
-#if NET471
-[Obsolete("不建议使用，推荐使用System.Configuration.ConfigurationBuilder + System.Configuration.ConfigurationManager")]
-#elif NETSTANDARD
-[Obsolete("不建议使用，后续版本可能删除，推荐安装包Com.Ctrip.Framework.Apollo.Configuration", true)]
-#endif
-public static class ApolloConfigurationManager
+internal static class ApolloConfigurationManager
 {
     private static readonly bool ConfigEnablePlaceholder;
     private static readonly Exception? Exception;
@@ -66,11 +61,9 @@ public static class ApolloConfigurationManager
     public static async Task<IConfig> GetConfig(IEnumerable<string> namespaces)
     {
         if (namespaces == null) throw new ArgumentNullException(nameof(namespaces));
-#if NET40
-        var configs = await TaskEx.WhenAll(namespaces.Reverse().Distinct().Select(GetConfig)).ConfigureAwait(false);
-#else
+
         var configs = await Task.WhenAll(namespaces.Reverse().Distinct().Select(GetConfig)).ConfigureAwait(false);
-#endif
+
         if (configs.Length < 1) throw new ArgumentException("namespaces not allow empty");
 
         var config = configs.Length == 1 ? configs[0] : new MultiConfig(configs);

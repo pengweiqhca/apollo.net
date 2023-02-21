@@ -113,13 +113,6 @@ public class ApolloOptions : IApolloOptions
         }
     }
 
-    [Obsolete("Please using the HttpMessageHandler property to configure.", true)]
-    public Func<HttpMessageHandler> HttpMessageHandlerFactory
-    {
-        get => () => _handler;
-        set => HttpMessageHandler = value();
-    }
-
     public ICacheFileProvider CacheFileProvider { get; set; } = new LocalPlaintextCacheFileProvider();
 
     /// <inheritdoc />

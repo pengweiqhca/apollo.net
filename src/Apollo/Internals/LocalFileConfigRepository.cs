@@ -11,13 +11,6 @@ public class LocalFileConfigRepository : AbstractConfigRepository, IRepositoryCh
 {
     private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () =>
         LogManager.CreateLogger(typeof(LocalFileConfigRepository));
-#if NET40
-    private static readonly Task CompletedTask = TaskEx.FromResult(0);
-#elif NET45
-    private static readonly Task CompletedTask = Task.FromResult(0);
-#else
-    private static readonly Task CompletedTask = Task.CompletedTask;
-#endif
     private const string ConfigDir = "config-cache";
 
     private string? _baseDir;
@@ -98,7 +91,7 @@ public class LocalFileConfigRepository : AbstractConfigRepository, IRepositoryCh
 
     private Task TrySyncFromUpstream()
     {
-        if (_upstream == null) return CompletedTask;
+        if (_upstream == null) return Task.CompletedTask;
 
         try
         {
@@ -108,20 +101,15 @@ public class LocalFileConfigRepository : AbstractConfigRepository, IRepositoryCh
         }
         catch (Exception ex)
         {
-            Logger()
-                .Warn(
+            Logger().Warn(
                     $"Sync config from upstream repository {_upstream.GetType()} failed, reason: {ex.GetDetailMessage()}");
 
             // If the config fails to be obtained at startup and there is no local cache, wait until successful or timeout.
             if (_fileProperties == null)
-#if NET40
-                return TaskEx.WhenAny((_tcs = new()).Task, TaskEx.Delay(_options.StartupTimeout));
-#else
                 return Task.WhenAny((_tcs = new()).Task, Task.Delay(_options.StartupTimeout));
-#endif
         }
 
-        return CompletedTask;
+        return Task.CompletedTask;
     }
 
     public void OnRepositoryChange(string namespaceName, Properties newProperties)

@@ -3,8 +3,8 @@ using Com.Ctrip.Framework.Apollo.ConfigAdapter;
 using Com.Ctrip.Framework.Apollo.Enums;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Configuration;
 using System.Web;
+using ConfigurationManager = System.Configuration.ConfigurationManager;
 
 namespace Apollo.AspNet.Demo;
 

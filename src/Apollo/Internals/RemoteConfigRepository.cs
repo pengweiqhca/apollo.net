@@ -4,12 +4,8 @@ using Com.Ctrip.Framework.Apollo.Exceptions;
 using Com.Ctrip.Framework.Apollo.Logging;
 using Com.Ctrip.Framework.Apollo.Util;
 using Com.Ctrip.Framework.Apollo.Util.Http;
-#if NET40
-using System.Reflection;
-#else
 using System.Runtime.ExceptionServices;
 using System.Web;
-#endif
 
 namespace Com.Ctrip.Framework.Apollo.Internals;
 
@@ -159,11 +155,8 @@ internal class RemoteConfigRepository : AbstractConfigRepository
                     exception = ex;
                 }
             }
-#if NET40
-            await TaskEx.Delay(1000).ConfigureAwait(false);
-#else
+
             await Task.Delay(1000).ConfigureAwait(false);
-#endif
         }
 
         if (notFound)
@@ -262,48 +255,3 @@ internal class RemoteConfigRepository : AbstractConfigRepository
 
     public override string ToString() => $"remote {_options.AppId} {Namespace}";
 }
-
-#if NET40
-internal sealed class ExceptionDispatchInfo
-{
-    private readonly object _source;
-    private readonly string _stackTrace;
-
-    private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
-    private static readonly FieldInfo RemoteStackTrace = typeof(Exception).GetField("_remoteStackTraceString", PrivateInstance)!;
-    private static readonly FieldInfo Source = typeof(Exception).GetField("_source", PrivateInstance)!;
-    private static readonly MethodInfo InternalPreserveStackTrace = typeof(Exception).GetMethod("InternalPreserveStackTrace", PrivateInstance)!;
-
-    private ExceptionDispatchInfo(Exception source)
-    {
-        SourceException = source;
-        _stackTrace = SourceException.StackTrace + Environment.NewLine;
-        _source = Source.GetValue(SourceException);
-    }
-
-    public Exception SourceException { get; }
-
-    public static ExceptionDispatchInfo Capture(Exception source)
-    {
-        if (source == null) throw new ArgumentNullException(nameof(source));
-
-        return new(source);
-    }
-
-    public void Throw()
-    {
-        try
-        {
-            throw SourceException;
-        }
-        catch
-        {
-            InternalPreserveStackTrace.Invoke(SourceException, new object[0]);
-            RemoteStackTrace.SetValue(SourceException, _stackTrace);
-            Source.SetValue(SourceException, _source);
-            throw;
-        }
-    }
-}
-
-#endif

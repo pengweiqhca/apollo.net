@@ -29,21 +29,13 @@ public class NetworkInterfaceManager
         }
         catch
         {
-            // ignored
-#if NETSTANDARD
             HostIps = Array.Empty<string>();
-#else
-            HostIps = new string[0];
-#endif
         }
     }
 
     public static string HostIp { get; } = "127.0.0.1";
-#if NET40
-    public static string GetHostIp(ReadOnlyCollection<string>? preferSubnet)
-#else
+
     public static string GetHostIp(IReadOnlyCollection<string>? preferSubnet)
-#endif
     {
         if (preferSubnet == null || preferSubnet.Count < 1) return HostIp;
 

@@ -23,21 +23,17 @@ public interface IApolloOptions : IDisposable
     /// </summary>
     /// <returns> the env </returns>
     Env Env { get; }
-#if NET40
-    ReadOnlyCollection<string>? PreferSubnet { get; }
-#else
+
     IReadOnlyCollection<string>? PreferSubnet { get; }
-#endif
+
     string LocalIp { get; }
 
     string? MetaServer { get; }
 
     string? Secret { get; }
-#if NET40
-    ReadOnlyCollection<string>? ConfigServer { get; }
-#else
+
     IReadOnlyCollection<string>? ConfigServer { get; }
-#endif
+
     /// <summary>Load config timeout. ms</summary>
     int Timeout { get; }
 
@@ -52,9 +48,6 @@ public interface IApolloOptions : IDisposable
 
     /// <summary>ms, default value is 30000. If the config fails to be obtained at startup and there is no local cache, wait until successful or timeout.</summary>
     int StartupTimeout { get; }
-#if NET40
-    ReadOnlyCollection<string>? SpecialDelimiter { get; }
-#else
+
     IReadOnlyCollection<string>? SpecialDelimiter { get; }
-#endif
 }

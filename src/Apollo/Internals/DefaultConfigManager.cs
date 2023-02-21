@@ -21,11 +21,8 @@ public class DefaultConfigManager : IConfigManager
     public async Task<IConfig> GetConfig(string namespaceName)
     {
         if (_configs.TryGetValue(namespaceName, out var config)) return config;
-#if NET40
-            _semaphore.Wait();
-#else
-        await _semaphore.WaitAsync().ConfigureAwait(false);
-#endif
+            await _semaphore.WaitAsync().ConfigureAwait(false);
+
         try
         {
             if (!_configs.TryGetValue(namespaceName, out config))

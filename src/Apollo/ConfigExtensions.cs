@@ -33,11 +33,7 @@ public static partial class ConfigExtensions
     /// <param name="defaultValue"> the default value when key is not found or any error occurred </param>
     /// <returns> the property value as array </returns>
     [return: NotNullIfNotNull("defaultValue")]
-#if NET40
-    public static string?[]? GetProperty(this IConfig config, string key, string delimiter, string?[]? defaultValue)
-#else
     public static IReadOnlyList<string?>? GetProperty(this IConfig config, string key, string delimiter, IReadOnlyList<string?>? defaultValue)
-#endif
     {
         if (config == null) throw new ArgumentNullException(nameof(config));
 
@@ -49,7 +45,7 @@ public static partial class ConfigExtensions
         }
         catch (Exception ex)
         {
-            Logger().Error(new ApolloConfigException($"GetProperty for {key} failed, raw value is '{str}', return default value {string.Join(",", defaultValue ?? new string[0])}", ex));
+            Logger().Error(new ApolloConfigException($"GetProperty for {key} failed, raw value is '{str}', return default value {string.Join(",", defaultValue ?? Array.Empty<string>())}", ex));
         }
 
         return defaultValue;

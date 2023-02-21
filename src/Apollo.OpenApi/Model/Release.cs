@@ -11,10 +11,7 @@ public class Release : BaseModel
     public string? NamespaceName { get; set; }
 
     public string? Name { get; set; }
-#if NET40
-    public IDictionary<string, string>? Configurations { get; set; }
-#else
+
     public IReadOnlyDictionary<string, string>? Configurations { get; set; }
-#endif
     public string? Comment { get; set; }
 }

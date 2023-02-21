@@ -2,7 +2,7 @@
 
 internal class ApolloNotificationMessages
 {
-    public IDictionary<string, long> Details { get; init; } = new Dictionary<string, long>();
+    public IDictionary<string, long> Details { get; set; } = new Dictionary<string, long>();
 
     public void MergeFrom(ApolloNotificationMessages? source)
     {

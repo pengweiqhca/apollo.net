@@ -102,11 +102,7 @@ internal class RemoteConfigLongPollService : IDisposable
                 Logger().Debug($"Long polling from {url}");
 
                 var response = await _httpUtil
-#if NET40
-                    .DoGetAsync<ICollection<ApolloConfigNotification>>(url, 600000)
-#else
                     .DoGetAsync<IReadOnlyCollection<ApolloConfigNotification>>(url, 600000)
-#endif
                     .ConfigureAwait(false);
 
                 Logger().Debug($"Long polling response: {response.StatusCode}, url: {url}");
@@ -141,19 +137,12 @@ internal class RemoteConfigLongPollService : IDisposable
             }
             finally
             {
-#if NET40
-                await TaskEx.Delay(sleepTime, cancellationToken).ConfigureAwait(false);
-#else
                 await Task.Delay(sleepTime, cancellationToken).ConfigureAwait(false);
-#endif
             }
         }
     }
-#if NET40
-    private void Notify(ServiceDto lastServiceDto, ICollection<ApolloConfigNotification>? notifications)
-#else
+
     private void Notify(ServiceDto lastServiceDto, IReadOnlyCollection<ApolloConfigNotification>? notifications)
-#endif
     {
         if (notifications == null || notifications.Count == 0) return;
 

@@ -1,7 +1,4 @@
 ﻿using Com.Ctrip.Framework.Apollo.OpenApi.Model;
-#if NET40
-using WebUtility = System.Web.HttpUtility;
-#endif
 
 namespace Com.Ctrip.Framework.Apollo.OpenApi
 {
