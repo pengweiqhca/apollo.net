@@ -17,7 +17,7 @@ public abstract class ContentConfigAdapter : IConfigAdapter
 
     public Properties GetProperties(Properties properties)
     {
-        if (properties.GetPropertyNames().Count < 1) return properties;
+        if (properties.ThrowIfNull().GetPropertyNames().Count < 1) return properties;
 
         var content = properties.GetProperty(ConfigConsts.ConfigFileContentKey);
 
@@ -46,6 +46,6 @@ public static class ConfigAdapterRegister
     public static void AddAdapter(ConfigFileFormat format, IConfigAdapter adapter) =>
         Dic[format] = adapter ?? throw new ArgumentNullException(nameof(adapter));
 
-    internal static bool TryGetAdapter(ConfigFileFormat format, out IConfigAdapter adapter) =>
+    internal static bool TryGetAdapter(ConfigFileFormat format, [NotNullWhen(true)] out IConfigAdapter? adapter) =>
         Dic.TryGetValue(format, out adapter);
 }

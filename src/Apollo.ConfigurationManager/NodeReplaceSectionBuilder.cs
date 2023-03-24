@@ -9,13 +9,15 @@ public class NodeReplaceSectionBuilder : ApolloConfigurationBuilder
 
     public override void Initialize(string name, NameValueCollection config)
     {
-        base.Initialize(name, config);
+        base.Initialize(name, config.ThrowIfNull());
 
         _key = config["key"];
     }
 
     public override XmlNode ProcessRawXml(XmlNode rawXml)
     {
+        rawXml.ThrowIfNull();
+
         if (string.IsNullOrWhiteSpace(_key)) _key = rawXml.Name;
 
         if (!GetConfig().TryGetProperty(_key!, out var xml) ||
@@ -26,7 +28,9 @@ public class NodeReplaceSectionBuilder : ApolloConfigurationBuilder
 
         try
         {
-            doc.LoadXml(xml);
+            using var reader = XmlReader.Create(xml);
+
+            doc.Load(reader);
         }
         catch (Exception ex)
         {

@@ -10,7 +10,6 @@ internal static class XmlConfigurationParser
     /// Read a stream of INI values into a key/value dictionary.
     /// </summary>
     /// <param name="stream">The stream of INI data.</param>
-    /// <returns></returns>
     public static IDictionary<string, string> Read(TextReader stream)
     {
         var data = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -44,38 +43,32 @@ internal static class XmlConfigurationParser
 
                     // If current element is self-closing
                     if (reader.IsEmptyElement)
-                    {
                         prefixStack.Pop();
-                    }
+
                     break;
 
                 case XmlNodeType.EndElement:
-                    if (prefixStack.Any())
+                    if (prefixStack.Count > 0)
                     {
                         // If this EndElement node comes right after an Element node,
                         // it means there is no text/CDATA node in current element
                         if (preNodeType == XmlNodeType.Element)
-                        {
-                            var key = ConfigurationPath.Combine(prefixStack.Reverse());
-                            data[key] = string.Empty;
-                        }
+                            data[ConfigurationPath.Combine(prefixStack.Reverse())] = string.Empty;
 
                         prefixStack.Pop();
                     }
+
                     break;
 
                 case XmlNodeType.CDATA:
                 case XmlNodeType.Text:
-                {
                     var key = ConfigurationPath.Combine(prefixStack.Reverse());
                     if (data.ContainsKey(key))
-                    {
                         throw new FormatException($"A duplicate key '{key}' was found.{GetLineInfo(reader)}");
-                    }
 
                     data[key] = reader.Value;
                     break;
-                }
+
                 case XmlNodeType.XmlDeclaration:
                 case XmlNodeType.ProcessingInstruction:
                 case XmlNodeType.Comment:
@@ -86,7 +79,9 @@ internal static class XmlConfigurationParser
                 default:
                     throw new FormatException($"Unsupported node type '{reader.NodeType}' was found.{GetLineInfo(reader)}");
             }
+
             preNodeType = reader.NodeType;
+
             // If this element is a self-closing element,
             // we pretend that we just processed an EndElement node
             // because a self-closing element contains an end within itself
@@ -124,9 +119,7 @@ internal static class XmlConfigurationParser
 
             // If there is a namespace attached to current attribute
             if (!string.IsNullOrEmpty(reader.NamespaceURI))
-            {
                 throw new FormatException($"XML namespaces are not supported.{GetLineInfo(reader)}");
-            }
 
             act(reader, prefixStack, data);
         }
@@ -141,12 +134,10 @@ internal static class XmlConfigurationParser
         IDictionary<string, string> data)
     {
         if (!string.Equals(reader.LocalName, NameAttributeKey, StringComparison.OrdinalIgnoreCase))
-        {
             return;
-        }
 
         // If current element is not root element
-        if (prefixStack.Any())
+        if (prefixStack.Count > 0)
         {
             var lastPrefix = prefixStack.Pop();
             prefixStack.Push(ConfigurationPath.Combine(lastPrefix, reader.Value));
@@ -165,9 +156,7 @@ internal static class XmlConfigurationParser
         prefixStack.Push(reader.LocalName);
         var key = ConfigurationPath.Combine(prefixStack.Reverse());
         if (data.ContainsKey(key))
-        {
             throw new FormatException($"A duplicate key '{key}' was found.{GetLineInfo(reader)}");
-        }
 
         data[key] = reader.Value;
         prefixStack.Pop();

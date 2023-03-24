@@ -1,18 +1,13 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
-using System.Net.Http.Formatting;
+﻿using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Com.Ctrip.Framework.Apollo.OpenApi;
 
 internal static class OpenApiClientExtensions
 {
-    private static readonly MediaTypeFormatter Json = new JsonMediaTypeFormatter
+    private static readonly JsonSerializerOptions Options = new()
     {
-        SerializerSettings = new()
-        {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        }
+        PropertyNameCaseInsensitive = false,
     };
 
     public static async Task<TResponse?> Get<TResponse>(this IOpenApiClient client, string url, CancellationToken cancellationToken) where TResponse : class
@@ -26,7 +21,7 @@ internal static class OpenApiClientExtensions
 
         await AssertResponse(response).ConfigureAwait(false);
 
-        return await response.Content.ReadAsAsync<TResponse>(cancellationToken).ConfigureAwait(false);
+        return await response.Content.ReadFromJsonAsync<TResponse>(Options, cancellationToken).ConfigureAwait(false);
     }
 
     public static async Task<bool> Delete(this IOpenApiClient client, string url, CancellationToken cancellationToken)
@@ -43,20 +38,20 @@ internal static class OpenApiClientExtensions
         return true;
     }
 
-    public static async Task<TResponse> Post<TResponse>(this IOpenApiClient client, string url, object data, CancellationToken cancellationToken)
+    public static async Task<TResponse?> Post<TResponse>(this IOpenApiClient client, string url, object data, CancellationToken cancellationToken)
     {
         if (url == null) throw new ArgumentNullException(nameof(url));
 
         using var httpClient = client.CreateHttpClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            Content = new ObjectContent<object>(data, Json)
+            Content = JsonContent.Create(data, options: Options)
         };
         using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         await AssertResponse(response).ConfigureAwait(false);
 
-        return await response.Content.ReadAsAsync<TResponse>(cancellationToken).ConfigureAwait(false);
+        return await response.Content.ReadFromJsonAsync<TResponse>(Options, cancellationToken).ConfigureAwait(false);
     }
 
     public static async Task<bool> Put(this IOpenApiClient client, string url, CancellationToken cancellationToken)
@@ -74,20 +69,20 @@ internal static class OpenApiClientExtensions
         return true;
     }
 
-    public static async Task<TResponse> Put<TResponse>(this IOpenApiClient client, string url, object data, CancellationToken cancellationToken)
+    public static async Task<TResponse?> Put<TResponse>(this IOpenApiClient client, string url, object data, CancellationToken cancellationToken)
     {
         if (url == null) throw new ArgumentNullException(nameof(url));
 
         using var httpClient = client.CreateHttpClient();
         using var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
-            Content = new ObjectContent<object>(data, Json)
+            Content = JsonContent.Create(data, options: Options)
         };
         using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         await AssertResponse(response).ConfigureAwait(false);
 
-        return await response.Content.ReadAsAsync<TResponse>(cancellationToken).ConfigureAwait(false);
+        return await response.Content.ReadFromJsonAsync<TResponse>(Options, cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task AssertResponse(HttpResponseMessage response)
@@ -99,12 +94,11 @@ internal static class OpenApiClientExtensions
         Exception ex;
         try
         {
-            var json = JsonConvert.DeserializeObject<JToken>(body);
+            var msg = JsonSerializer.Deserialize<ExceptionMessage>(body, Options);
 
-            var exception = json.Value<string>("exception");
-            var message = json.Value<string>("message");
-
-            ex = new ApolloOpenApiException(response.StatusCode, string.IsNullOrEmpty(response.ReasonPhrase) ? exception : response.ReasonPhrase, message);
+            ex = msg == null
+                ? new ApolloOpenApiException(response.StatusCode, response.ReasonPhrase, body)
+                : new ApolloOpenApiException(response.StatusCode, string.IsNullOrEmpty(response.ReasonPhrase) ? msg.Exception : response.ReasonPhrase, msg.Message);
         }
         catch (Exception e)
         {
@@ -113,4 +107,6 @@ internal static class OpenApiClientExtensions
 
         throw ex;
     }
+
+    private sealed record ExceptionMessage(string Message, string Exception);
 }

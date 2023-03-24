@@ -9,18 +9,18 @@ public class DefaultConfigRegistry : IConfigRegistry
 
     public void Register(string namespaceName, IConfigFactory factory)
     {
+        factory.ThrowIfNull();
+
         if (_instances.ContainsKey(namespaceName))
-        {
             Logger().Warn($"ConfigFactory({namespaceName}) is overridden by {factory.GetType()}!");
-        }
 
         _instances[namespaceName] = factory;
-
     }
 
-    public IConfigFactory GetFactory(string namespaceName)
+    public IConfigFactory? GetFactory(string namespaceName)
     {
         _instances.TryGetValue(namespaceName, out var config);
+
         return config;
     }
 }

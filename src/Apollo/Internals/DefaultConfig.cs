@@ -8,10 +8,11 @@ namespace Com.Ctrip.Framework.Apollo.Internals;
 public class DefaultConfig : AbstractConfig, IRepositoryChangeListener, IDisposable
 {
     private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(DefaultConfig));
+
     private readonly string _namespace;
-    private volatile Properties? _configProperties;
     private readonly IConfigRepository _configRepository;
     private readonly SemaphoreSlim _waitHandle = new(1, 1);
+    private volatile Properties? _configProperties;
 
     public DefaultConfig(string namespaceName, IConfigRepository configRepository)
     {
@@ -33,8 +34,8 @@ public class DefaultConfig : AbstractConfig, IRepositoryChangeListener, IDisposa
         }
         finally
         {
-            //register the change listener no matter config repository is working or not
-            //so that whenever config repository is recovered, config could get changed
+            // register the change listener no matter config repository is working or not
+            // so that whenever config repository is recovered, config could get changed
             _configRepository.AddChangeListener(this);
         }
     }
@@ -51,13 +52,13 @@ public class DefaultConfig : AbstractConfig, IRepositoryChangeListener, IDisposa
 
     public void OnRepositoryChange(string namespaceName, Properties newProperties)
     {
-        lock (this)
+        lock (_waitHandle)
         {
             var newConfigProperties = new Properties(newProperties);
 
             var actualChanges = UpdateAndCalcConfigChanges(newConfigProperties);
 
-            //check double checked result
+            // check double checked result
             if (actualChanges.Count == 0) return;
 
             FireConfigChange(actualChanges);
@@ -66,55 +67,49 @@ public class DefaultConfig : AbstractConfig, IRepositoryChangeListener, IDisposa
 
     private Dictionary<string, ConfigChange> UpdateAndCalcConfigChanges(Properties newConfigProperties)
     {
-        var configChanges = CalcPropertyChanges(_configProperties!, newConfigProperties);
+        var configChanges = CalcPropertyChanges(_configProperties, newConfigProperties);
 
         var actualChanges = new Dictionary<string, ConfigChange>();
 
-        //1. use getProperty to update configChanges's old value
+        // 1. use getProperty to update configChanges's old value
         foreach (var change in configChanges)
-        {
             change.OldValue = this.GetProperty(change.PropertyName, change.OldValue);
-        }
 
-        //2. update _configProperties
+        // 2. update _configProperties
         _configProperties = newConfigProperties;
 
-        //3. use getProperty to update configChange's new value and calc the final changes
+        // 3. use getProperty to update configChange's new value and calc the final changes
         foreach (var change in configChanges)
         {
             change.NewValue = this.GetProperty(change.PropertyName, change.NewValue);
             switch (change.ChangeType)
             {
                 case PropertyChangeType.Added:
-                    if (string.Equals(change.OldValue, change.NewValue))
-                    {
+                    if (string.Equals(change.OldValue, change.NewValue, StringComparison.Ordinal))
                         break;
-                    }
+
                     if (change.OldValue != null)
-                    {
                         change.ChangeType = PropertyChangeType.Modified;
-                    }
+
                     actualChanges[change.PropertyName] = change;
                     break;
                 case PropertyChangeType.Modified:
-                    if (!string.Equals(change.OldValue, change.NewValue))
-                    {
+                    if (!string.Equals(change.OldValue, change.NewValue, StringComparison.Ordinal))
                         actualChanges[change.PropertyName] = change;
-                    }
+
                     break;
                 case PropertyChangeType.Deleted:
-                    if (string.Equals(change.OldValue, change.NewValue))
-                    {
+                    if (string.Equals(change.OldValue, change.NewValue, StringComparison.Ordinal))
                         break;
-                    }
+
                     if (change.NewValue != null)
-                    {
                         change.ChangeType = PropertyChangeType.Modified;
-                    }
+
                     actualChanges[change.PropertyName] = change;
                     break;
             }
         }
+
         return actualChanges;
     }
 
@@ -124,5 +119,10 @@ public class DefaultConfig : AbstractConfig, IRepositoryChangeListener, IDisposa
         return properties == null ? new HashSet<string>() : properties.GetPropertyNames();
     }
 
-    public void Dispose() => _waitHandle?.Dispose();
+    public void Dispose()
+    {
+        _waitHandle?.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
 }

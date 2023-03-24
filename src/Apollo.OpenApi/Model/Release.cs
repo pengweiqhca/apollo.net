@@ -13,5 +13,6 @@ public class Release : BaseModel
     public string? Name { get; set; }
 
     public IReadOnlyDictionary<string, string>? Configurations { get; set; }
+
     public string? Comment { get; set; }
 }

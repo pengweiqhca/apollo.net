@@ -24,7 +24,7 @@ internal class Program
 
             input = input.Trim();
 
-            if (input.Equals("quit", StringComparison.CurrentCultureIgnoreCase)) return;
+            if (input.Equals("quit", StringComparison.OrdinalIgnoreCase)) return;
 
             demo.GetConfig(input);
         }

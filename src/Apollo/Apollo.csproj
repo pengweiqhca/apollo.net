@@ -11,7 +11,7 @@
 
 $(PackageReleaseNotes)</Description>
     <RootNamespace>Com.Ctrip.Framework.Apollo</RootNamespace>
-    <TargetFrameworks>net461;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net461;net6.0</TargetFrameworks>
     <Version>$(ApolloVersion).0</Version>
   </PropertyGroup>
 
@@ -50,7 +50,7 @@ $(PackageReleaseNotes)</Description>
     <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
 
     <Using Include="System.Net.Http.Json" />
-    <Using Include="System.Text.Json" />    
+    <Using Include="System.Text.Json" />
   </ItemGroup>
 
 </Project>

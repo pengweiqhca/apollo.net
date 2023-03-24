@@ -6,7 +6,9 @@ namespace Com.Ctrip.Framework.Apollo;
 public class ApolloConfigurationProvider : ConfigurationProvider, IRepositoryChangeListener, IConfigurationSource, IDisposable
 {
     internal string? SectionKey { get; }
+
     internal IConfigRepository ConfigRepository { get; }
+
     private Task? _initializeTask;
     private int _buildCount;
 
@@ -29,12 +31,12 @@ public class ApolloConfigurationProvider : ConfigurationProvider, IRepositoryCha
     {
         var data = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var key in properties.GetPropertyNames())
+        foreach (var key in properties.ThrowIfNull().GetPropertyNames())
         {
             if (string.IsNullOrEmpty(SectionKey))
                 data[key] = properties.GetProperty(key) ?? string.Empty;
             else
-                data[$"{SectionKey}{ConfigurationPath.KeyDelimiter}{key}"] = properties.GetProperty(key) ?? string.Empty;
+                data[SectionKey + ConfigurationPath.KeyDelimiter + key] = properties.GetProperty(key) ?? string.Empty;
         }
 
         Data = data;
@@ -58,6 +60,8 @@ public class ApolloConfigurationProvider : ConfigurationProvider, IRepositoryCha
     {
         if (Interlocked.Decrement(ref _buildCount) == 0)
             ConfigRepository.RemoveChangeListener(this);
+
+        GC.SuppressFinalize(this);
     }
 
     public override string ToString() => string.IsNullOrEmpty(SectionKey)

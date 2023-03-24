@@ -15,7 +15,7 @@ public interface IConfig
     /// <param name="key"> the property name </param>
     /// <param name="value"> the value </param>
     /// <returns> true: the key is found; false the key is not found </returns>
-    bool TryGetProperty(string key, [NotNullWhen(true)]out string? value);
+    bool TryGetProperty(string key, [NotNullWhen(true)] out string? value);
 
     /// <summary>
     /// Return a set of the property names

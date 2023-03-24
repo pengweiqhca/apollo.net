@@ -5,6 +5,7 @@ namespace Com.Ctrip.Framework.Apollo.Logging;
 public static class LogManager
 {
     private static readonly Action<LogLevel, string, Exception?> Noop = (_, _, _) => { };
+
     public static Func<string, Action<LogLevel, string, Exception?>> LogFactory { get; set; } = _ => Noop;
 
     public static void UseConsoleLogging(LogLevel minimumLevel) =>
@@ -21,7 +22,7 @@ public static class LogManager
     {
         try
         {
-            return LogFactory(type.FullName);
+            return LogFactory(type.FullName ?? type.ToString());
         }
         catch (Exception e)
         {

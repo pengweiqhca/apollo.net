@@ -11,14 +11,16 @@ public class LocalFileConfigRepository : AbstractConfigRepository, IRepositoryCh
 {
     private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () =>
         LogManager.CreateLogger(typeof(LocalFileConfigRepository));
+
     private const string ConfigDir = "config-cache";
+
+    private readonly IApolloOptions _options;
+    private readonly IConfigRepository? _upstream;
+    private readonly object _lock = new();
 
     private string? _baseDir;
     private volatile Properties? _fileProperties;
     private TaskCompletionSource<object?>? _tcs;
-
-    private readonly IApolloOptions _options;
-    private readonly IConfigRepository? _upstream;
 
     public ConfigFileFormat Format { get; } = ConfigFileFormat.Properties;
 
@@ -47,15 +49,14 @@ public class LocalFileConfigRepository : AbstractConfigRepository, IRepositoryCh
                 Logger().Warn(ex);
             }
 
-        if (_upstream != null)
-        {
-            await _upstream.Initialize().ConfigureAwait(false);
+        if (_upstream == null) return;
 
-            _upstream.AddChangeListener(this);
+        await _upstream.Initialize().ConfigureAwait(false);
 
-            //sync with upstream immediately
-            await TrySyncFromUpstream();
-        }
+        _upstream.AddChangeListener(this);
+
+        // sync with upstream immediately
+        await TrySyncFromUpstream();
     }
 
     public override Properties GetConfig()
@@ -84,8 +85,7 @@ public class LocalFileConfigRepository : AbstractConfigRepository, IRepositoryCh
 
         if (disposing) _upstream?.Dispose();
 
-        //释放非托管资源
-
+        // 释放非托管资源
         _disposed = true;
     }
 
@@ -125,7 +125,7 @@ public class LocalFileConfigRepository : AbstractConfigRepository, IRepositoryCh
     {
         if (_baseDir == null) return;
 
-        lock (this)
+        lock (_lock)
         {
             if (newProperties.Equals(_fileProperties)) return;
 
@@ -177,7 +177,7 @@ public class LocalFileConfigRepository : AbstractConfigRepository, IRepositoryCh
     {
         try
         {
-            _baseDir = Path.Combine(_options.LocalCacheDir, ConfigDir);
+            _baseDir = Path.Combine(_options.LocalCacheDir ?? Path.Combine(ConfigConsts.DefaultLocalCacheDir, _options.AppId), ConfigDir);
         }
         catch (Exception ex)
         {

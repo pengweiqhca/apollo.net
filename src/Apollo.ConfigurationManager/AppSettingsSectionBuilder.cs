@@ -5,16 +5,16 @@ namespace Com.Ctrip.Framework.Apollo;
 
 public class AppSettingsSectionBuilder : ApolloConfigurationBuilder
 {
+    private readonly object _lock = new();
     private string? _keyPrefix;
 
     public override void Initialize(string name, NameValueCollection config)
     {
-        base.Initialize(name, config);
+        base.Initialize(name, config.ThrowIfNull());
 
         _keyPrefix = config["keyPrefix"];
 
-        if (!string.IsNullOrWhiteSpace(_keyPrefix) && !_keyPrefix.EndsWith(":"))
-            _keyPrefix += ":";
+        if (!string.IsNullOrWhiteSpace(_keyPrefix) && _keyPrefix[^1] != ':') _keyPrefix += ":";
     }
 
     public override ConfigurationSection ProcessConfigurationSection(ConfigurationSection configSection)
@@ -25,7 +25,7 @@ public class AppSettingsSectionBuilder : ApolloConfigurationBuilder
 
         TrySetConfigUtil(appSettings);
 
-        lock (this)
+        lock (_lock)
         {
             var config = GetConfig().WithPrefix(_keyPrefix);
 

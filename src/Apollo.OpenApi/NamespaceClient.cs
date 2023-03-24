@@ -12,7 +12,10 @@ public class NamespaceClient : OpenApiClient, INamespaceClient
     }
 
     public string AppId { get; }
+
     public string Env { get; }
+
     public string Cluster { get; }
+
     public string Namespace { get; }
 }

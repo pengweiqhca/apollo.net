@@ -10,7 +10,7 @@ internal class ApolloNotificationMessages
 
         foreach (var entry in source.Details)
         {
-            //to make sure the notification id always grows bigger
+            // to make sure the notification id always grows bigger
             if (!Details.TryGetValue(entry.Key, out var value) || value < entry.Value) Details[entry.Key] = entry.Value;
         }
     }

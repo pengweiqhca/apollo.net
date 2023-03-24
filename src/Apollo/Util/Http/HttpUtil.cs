@@ -12,6 +12,8 @@ public class HttpUtil : IDisposable
 
     public async Task<HttpResponse<T>> DoGetAsync<T>(Uri url, int timeout)
     {
+        url.ThrowIfNull();
+
         Exception e;
         try
         {
@@ -50,5 +52,10 @@ public class HttpUtil : IDisposable
         throw e;
     }
 
-    public void Dispose() => _options.Dispose();
+    public void Dispose()
+    {
+        if (_options is IDisposable disposable) disposable.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
 }

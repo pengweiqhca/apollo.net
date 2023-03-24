@@ -1,6 +1,6 @@
 ﻿namespace Com.Ctrip.Framework.Apollo.Core;
 
-public class ConfigConsts
+public static class ConfigConsts
 {
     public const string NamespaceApplication = "application";
     public const string ClusterNameDefault = "default";
@@ -12,5 +12,6 @@ public class ConfigConsts
     public const string ConfigService = "apollo-configservice";
 
     public static bool IsUnix { get; } = Environment.CurrentDirectory[0] == '/';
+
     public static string DefaultLocalCacheDir { get; } = IsUnix ? "/opt/data" : @"C:\opt\data";
 }

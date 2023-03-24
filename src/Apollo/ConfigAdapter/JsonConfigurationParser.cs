@@ -1,6 +1,8 @@
-﻿namespace Com.Ctrip.Framework.Apollo.ConfigAdapter;
+﻿using System.Globalization;
 
-internal class JsonConfigurationParser
+namespace Com.Ctrip.Framework.Apollo.ConfigAdapter;
+
+internal sealed class JsonConfigurationParser
 {
     private JsonConfigurationParser() { }
 
@@ -8,8 +10,7 @@ internal class JsonConfigurationParser
 
     private readonly Stack<string> _context = new();
 
-    public static IDictionary<string, string> Parse(string input)
-        => new JsonConfigurationParser().ParseStream(input);
+    public static IDictionary<string, string> Parse(string input) => new JsonConfigurationParser().ParseStream(input);
 
     private IDictionary<string, string> ParseStream(string input)
     {
@@ -51,7 +52,7 @@ internal class JsonConfigurationParser
 
         foreach (var arrayElement in element.EnumerateArray())
         {
-            EnterContext(index.ToString());
+            EnterContext(index.ToString(CultureInfo.InvariantCulture));
             VisitValue(arrayElement);
             ExitContext();
             index++;
@@ -63,9 +64,7 @@ internal class JsonConfigurationParser
     private void SetNullIfElementIsEmpty(bool isEmpty)
     {
         if (isEmpty && _context.Count > 0)
-        {
-            _data[_context.Peek()] = "";
-        }
+            _data[_context.Peek()] = string.Empty;
     }
 
     private void VisitValue(JsonElement value)

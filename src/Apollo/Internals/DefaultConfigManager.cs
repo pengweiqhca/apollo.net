@@ -2,7 +2,7 @@
 
 namespace Com.Ctrip.Framework.Apollo.Internals;
 
-public class DefaultConfigManager : IConfigManager
+public class DefaultConfigManager : IConfigManager, IDisposable
 {
     private readonly Dictionary<string, IConfig> _configs = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -21,7 +21,8 @@ public class DefaultConfigManager : IConfigManager
     public async Task<IConfig> GetConfig(string namespaceName)
     {
         if (_configs.TryGetValue(namespaceName, out var config)) return config;
-            await _semaphore.WaitAsync().ConfigureAwait(false);
+
+        await _semaphore.WaitAsync().ConfigureAwait(false);
 
         try
         {
@@ -34,5 +35,12 @@ public class DefaultConfigManager : IConfigManager
         }
 
         return config;
+    }
+
+    public void Dispose()
+    {
+        _semaphore.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }

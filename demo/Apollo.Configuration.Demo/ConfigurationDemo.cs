@@ -32,7 +32,7 @@ internal class ConfigurationDemo
     public string GetConfig(string key)
     {
         var result = _config.GetValue(key, DefaultValue);
-        if (result.Equals(DefaultValue))
+        if (result.Equals(DefaultValue, StringComparison.Ordinal))
         {
             result = _anotherConfig.GetValue(key, DefaultValue);
         }

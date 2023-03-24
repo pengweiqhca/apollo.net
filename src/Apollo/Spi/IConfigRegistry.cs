@@ -14,5 +14,5 @@ public interface IConfigRegistry
     /// </summary>
     /// <param name="namespaceName"> the namespace </param>
     /// <returns> the factory registered for this namespace </returns>
-    IConfigFactory GetFactory(string namespaceName);
+    IConfigFactory? GetFactory(string namespaceName);
 }

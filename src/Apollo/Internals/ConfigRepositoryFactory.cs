@@ -39,5 +39,7 @@ public class ConfigRepositoryFactory : IConfigRepositoryFactory, IDisposable
         _remoteConfigLongPollService.Dispose();
         _serviceLocator.Dispose();
         _httpUtil.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }

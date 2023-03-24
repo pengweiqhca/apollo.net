@@ -57,7 +57,7 @@ public class ConfigTest
 
         args = null;
 
-        repositoryFactories[1].Change(new(new Dictionary<string, string> {["B"] = "3"}));
+        repositoryFactories[1].Change(new(new Dictionary<string, string> { ["B"] = "3" }));
 
         await Task.Delay(100).ConfigureAwait(false);
 

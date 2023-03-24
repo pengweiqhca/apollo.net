@@ -24,9 +24,10 @@ public class ConfigChangeEventArgs : EventArgs
     /// Get a specific change instance for the key specified. </summary>
     /// <param name="key"> the changed key </param>
     /// <returns> the change instance </returns>
-    public ConfigChange GetChange(string key)
+    public ConfigChange? GetChange(string key)
     {
         Changes.TryGetValue(key, out var change);
+
         return change;
     }
 

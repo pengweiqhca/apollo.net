@@ -4,15 +4,17 @@
     <AssemblyName>Com.Ctrip.Framework.Apollo.OpenApi</AssemblyName>
     <PackageReleaseNotes></PackageReleaseNotes>
     <Description>携程Apollo的OpenApi客户端，入口接口IOpenApiFactory</Description>
-    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
-    <Version>2.1.1</Version>
+    <TargetFrameworks>net461;net6.0</TargetFrameworks>
+    <Version>2.2.0</Version>
     <RootNamespace>Com.Ctrip.Framework.Apollo.OpenApi</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="../Apollo/Core/ConfigConsts.cs" />
+    <Compile Include="../Apollo/Guard.cs" />
 
-    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.*" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
   </ItemGroup>
 
 </Project>

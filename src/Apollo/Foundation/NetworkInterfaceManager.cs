@@ -1,5 +1,5 @@
 ﻿using Com.Ctrip.Framework.Apollo.Logging;
-using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
@@ -22,10 +22,7 @@ public class NetworkInterfaceManager
                 .Select(address => address.Address.ToString())
                 .ToArray();
 
-            if (HostIps.Length > 0)
-            {
-                HostIp = HostIps.First();
-            }
+            if (HostIps.Length > 0) HostIp = HostIps[0];
         }
         catch
         {
@@ -82,7 +79,7 @@ public class NetworkInterfaceManager
 
         var address = BitConverter.ToInt32(IPAddress.Parse(ipAddress).GetAddressBytes(), 0);
 
-        var mask = IPAddress.HostToNetworkOrder(-1 << 32 - int.Parse(parts[1]));
+        var mask = IPAddress.HostToNetworkOrder(-1 << 32 - int.Parse(parts[1], CultureInfo.InvariantCulture));
 
         return (baseAddress & mask) == (address & mask);
     }

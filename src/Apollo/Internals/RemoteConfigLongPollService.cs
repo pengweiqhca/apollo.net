@@ -19,14 +19,14 @@ internal class RemoteConfigLongPollService : IDisposable
     private readonly ConfigServiceLocator _serviceLocator;
     private readonly HttpUtil _httpUtil;
     private readonly IApolloOptions _options;
-    private CancellationTokenSource? _cts;
     private readonly ISchedulePolicy _longPollFailSchedulePolicyInSecond;
     private readonly ISchedulePolicy _longPollSuccessSchedulePolicyInMs;
     private readonly ConcurrentDictionary<string, ISet<RemoteConfigRepository>> _longPollNamespaces;
     private readonly ConcurrentDictionary<string, long?> _notifications;
-
     private readonly ConcurrentDictionary<string, ApolloNotificationMessages>
-        _remoteNotificationMessages; //namespaceName -> watchedKey -> notificationId
+        _remoteNotificationMessages; // namespaceName -> watchedKey -> notificationId
+
+    private CancellationTokenSource? _cts;
 
     public RemoteConfigLongPollService(ConfigServiceLocator serviceLocator, HttpUtil httpUtil,
         IApolloOptions configUtil)
@@ -34,8 +34,8 @@ internal class RemoteConfigLongPollService : IDisposable
         _serviceLocator = serviceLocator;
         _httpUtil = httpUtil;
         _options = configUtil;
-        _longPollFailSchedulePolicyInSecond = new ExponentialSchedulePolicy(1, 120); //in second
-        _longPollSuccessSchedulePolicyInMs = new ExponentialSchedulePolicy(100, 1000); //in millisecond
+        _longPollFailSchedulePolicyInSecond = new ExponentialSchedulePolicy(1, 120); // in second
+        _longPollSuccessSchedulePolicyInMs = new ExponentialSchedulePolicy(100, 1000); // in millisecond
         _longPollNamespaces = new();
         _notifications = new();
         _remoteNotificationMessages = new();
@@ -87,7 +87,7 @@ internal class RemoteConfigLongPollService : IDisposable
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            var sleepTime = 50; //default 50 ms
+            var sleepTime = 50; // default 50 ms
             Uri? url = null;
             try
             {
@@ -119,7 +119,7 @@ internal class RemoteConfigLongPollService : IDisposable
                     sleepTime = _longPollSuccessSchedulePolicyInMs.Fail();
                 }
 
-                //try to load balance
+                // try to load balance
                 if (response.StatusCode == HttpStatusCode.NotModified && random.NextDouble() >= 0.5)
                     lastServiceDto = null;
 
@@ -150,12 +150,12 @@ internal class RemoteConfigLongPollService : IDisposable
         {
             var namespaceName = notification.NamespaceName;
 
-            //create a new list to avoid ConcurrentModificationException
+            // create a new list to avoid ConcurrentModificationException
             var toBeNotified = new List<RemoteConfigRepository>();
             if (_longPollNamespaces.TryGetValue(namespaceName, out var registries) && registries != null)
                 toBeNotified.AddRange(registries);
 
-            //since .properties are filtered out by default, so we need to check if there is any listener for it
+            // since .properties are filtered out by default, so we need to check if there is any listener for it
             if (_longPollNamespaces.TryGetValue($"{namespaceName}.{ConfigFileFormat.Properties.GetString()}",
                     out registries) && registries != null)
                 toBeNotified.AddRange(registries);
@@ -185,16 +185,12 @@ internal class RemoteConfigLongPollService : IDisposable
 
             var namespaceName = notification.NamespaceName;
             if (_notifications.ContainsKey(namespaceName))
-            {
                 _notifications[namespaceName] = notification.NotificationId;
-            }
 
-            //since .properties are filtered out by default, so we need to check if there is notification with .properties suffix
+            // since .properties are filtered out by default, so we need to check if there is notification with .properties suffix
             var namespaceNameWithPropertiesSuffix = $"{namespaceName}.{ConfigFileFormat.Properties.GetString()}";
             if (_notifications.ContainsKey(namespaceNameWithPropertiesSuffix))
-            {
                 _notifications[namespaceNameWithPropertiesSuffix] = notification.NotificationId;
-            }
         }
     }
 
@@ -217,25 +213,21 @@ internal class RemoteConfigLongPollService : IDisposable
 
         var uriBuilder = new UriBuilder(uri + "notifications/v2");
 #if NETFRAMEWORK
-        //不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
+        // 不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
         var query = new Dictionary<string, string>();
 #else
-        var query = HttpUtility.ParseQueryString("");
+        var query = HttpUtility.ParseQueryString(string.Empty);
 #endif
         query["appId"] = appId;
         query["cluster"] = cluster;
         query["notifications"] = AssembleNotifications(_notifications);
 
         if (!string.IsNullOrEmpty(dataCenter))
-        {
             query["dataCenter"] = dataCenter!;
-        }
 
         var localIp = _options.LocalIp;
         if (!string.IsNullOrEmpty(localIp))
-        {
             query["ip"] = localIp;
-        }
 #if NETFRAMEWORK
         uriBuilder.Query = QueryUtils.Build(query);
 #else
@@ -248,7 +240,7 @@ internal class RemoteConfigLongPollService : IDisposable
         JsonUtil.Serialize(notificationsMap.Select(kvp => new ApolloConfigNotification
         {
             NamespaceName = kvp.Key,
-            NotificationId = kvp.Value.GetValueOrDefault(InitNotificationId)
+            NotificationId = kvp.Value ?? InitNotificationId
         }));
 
     public void Dispose()

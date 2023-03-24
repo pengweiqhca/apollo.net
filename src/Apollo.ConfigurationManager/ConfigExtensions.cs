@@ -37,21 +37,17 @@ internal static class ConfigExtensions
     public static IEnumerable<ConnectionStringSettings> GetConnectionStrings(this IConfig config,
         string keyPrefix, string? defaultProviderName)
     {
-        string keyPrefixAndColon;
-        if (string.IsNullOrWhiteSpace(keyPrefix)) keyPrefixAndColon = keyPrefix = "";
-        else keyPrefixAndColon = keyPrefix + ":";
-
+        var keyPrefixAndColon = string.IsNullOrWhiteSpace(keyPrefix) ? (keyPrefix = string.Empty) : keyPrefix + ":";
         foreach (var name in config.GetChildren(keyPrefix))
         {
-            var connectionName = name.Name;
-
-            if (!config.TryGetProperty($"{keyPrefixAndColon}{connectionName}:ConnectionString", out var connectionString) &&
-                !config.TryGetProperty($"{keyPrefixAndColon}{connectionName}", out connectionString) ||
+            var connectionName = keyPrefixAndColon + name.Name;
+            if (!config.TryGetProperty($"{connectionName}:ConnectionString", out var connectionString) &&
+                !config.TryGetProperty(connectionName, out connectionString) ||
                 string.IsNullOrWhiteSpace(connectionString)) continue;
 
-            config.TryGetProperty($"{keyPrefixAndColon}{connectionName}:ProviderName", out var providerName);
+            config.TryGetProperty($"{connectionName}:ProviderName", out var providerName);
 
-            yield return new(connectionName, connectionString, providerName ?? defaultProviderName);
+            yield return new(name.Name, connectionString, providerName ?? defaultProviderName);
         }
     }
 

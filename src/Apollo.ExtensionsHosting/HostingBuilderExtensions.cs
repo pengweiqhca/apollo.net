@@ -1,11 +1,12 @@
 ﻿using Com.Ctrip.Framework.Apollo;
 using Microsoft.Extensions.Configuration;
 
-#if NETCOREAPP
+#if Web
 using IHostBuilder = Microsoft.AspNetCore.Hosting.IWebHostBuilder;
 
 namespace Microsoft.AspNetCore.Hosting;
 
+#pragma warning disable SA1649
 public static class WebHostingBuilderExtensions
 #else
 namespace Microsoft.Extensions.Hosting;
@@ -17,14 +18,19 @@ public static class HostingBuilderExtensions
     /// <param name="fromAppConfiguration">apollo配置源，false：环境变量、命令行之类；true：appsettings.json之类</param>
     /// <param name="key">apollo配置前缀</param>
     public static IHostBuilder AddApollo(this IHostBuilder hostBuilder, bool fromAppConfiguration = true,
-        string key = "apollo") =>
-        fromAppConfiguration
+        string key = "apollo")
+    {
+        if (hostBuilder == null) throw new ArgumentNullException(nameof(hostBuilder));
+
+        return fromAppConfiguration
             ? hostBuilder.ConfigureAppConfiguration((_, builder) => builder.AddApollo(builder.Build().GetSection(key)))
             : hostBuilder.ConfigureAppConfiguration((context, builder) =>
                 builder.AddApollo(context.Configuration.GetSection(key)));
+    }
 
     public static IHostBuilder AddApollo(this IHostBuilder hostBuilder, string appId, string metaServer)
     {
+        if (hostBuilder == null) throw new ArgumentNullException(nameof(hostBuilder));
         if (appId == null) throw new ArgumentNullException(nameof(appId));
         if (metaServer == null) throw new ArgumentNullException(nameof(metaServer));
 
@@ -33,6 +39,7 @@ public static class HostingBuilderExtensions
 
     public static IHostBuilder AddApollo(this IHostBuilder hostBuilder, Action<ApolloOptions> configure)
     {
+        if (hostBuilder == null) throw new ArgumentNullException(nameof(hostBuilder));
         if (configure == null) throw new ArgumentNullException(nameof(configure));
 
         var options = new ApolloOptions();

@@ -10,7 +10,7 @@ public class Properties
         ? new(StringComparer.OrdinalIgnoreCase)
         : new(dictionary, StringComparer.OrdinalIgnoreCase);
 
-    public Properties(Properties source) => _dict = new(source._dict, StringComparer.OrdinalIgnoreCase);
+    public Properties(Properties source) => _dict = new(source.ThrowIfNull()._dict, StringComparer.OrdinalIgnoreCase);
 
     public Properties(Stream stream)
     {

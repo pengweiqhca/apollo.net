@@ -18,12 +18,12 @@ internal class RemoteConfigRepository : AbstractConfigRepository
     private readonly HttpUtil _httpUtil;
     private readonly IApolloOptions _options;
     private readonly RemoteConfigLongPollService _remoteConfigLongPollService;
+    private readonly Timer _timer;
 
     private volatile ApolloConfig? _configCache;
     private volatile ServiceDto? _longPollServiceDto;
     private volatile ApolloNotificationMessages? _remoteMessages;
     private ExceptionDispatchInfo? _syncException;
-    private readonly Timer _timer;
 
     public RemoteConfigRepository(string @namespace,
         IApolloOptions configUtil,
@@ -55,7 +55,7 @@ internal class RemoteConfigRepository : AbstractConfigRepository
         return TransformApolloConfigToProperties(_configCache);
     }
 
-    private async void SchedulePeriodicRefresh(object _) => await SchedulePeriodicRefresh(false).ConfigureAwait(false);
+    private async void SchedulePeriodicRefresh(object? state) => await SchedulePeriodicRefresh(false).ConfigureAwait(false);
 
     private async Task SchedulePeriodicRefresh(bool isFirst)
     {
@@ -78,14 +78,13 @@ internal class RemoteConfigRepository : AbstractConfigRepository
         var previous = _configCache;
         var current = await LoadApolloConfig(isFirst).ConfigureAwait(false);
 
-        //reference equals means HTTP 304
-        if (!ReferenceEquals(previous, current))
-        {
-            Logger().Debug("Remote Config refreshed!");
-            _configCache = current;
-            _syncException = null;
-            FireRepositoryChange(Namespace, GetConfig());
-        }
+        // reference equals means HTTP 304
+        if (ReferenceEquals(previous, current)) return;
+
+        Logger().Debug("Remote Config refreshed!");
+        _configCache = current;
+        _syncException = null;
+        FireRepositoryChange(Namespace, GetConfig());
     }
 
     private async Task<ApolloConfig?> LoadApolloConfig(bool isFirst)
@@ -104,16 +103,14 @@ internal class RemoteConfigRepository : AbstractConfigRepository
         {
             IList<ServiceDto> randomConfigServices = configServices.OrderBy(_ => Guid.NewGuid()).ToList();
 
-            //Access the server which notifies the client first
+            // Access the server which notifies the client first
             var longPollServiceDto = Interlocked.Exchange(ref _longPollServiceDto, null);
             if (longPollServiceDto != null)
-            {
                 randomConfigServices.Insert(0, longPollServiceDto);
-            }
 
             foreach (var configService in randomConfigServices)
             {
-                url = AssembleQueryConfigUrl(configService.HomepageUrl, appId, cluster, Namespace, dataCenter, _remoteMessages!, _configCache!);
+                url = AssembleQueryConfigUrl(configService.HomepageUrl, appId, cluster, Namespace, dataCenter, _remoteMessages, _configCache);
 
                 Logger().Debug($"Loading config from {url}");
 
@@ -136,7 +133,8 @@ internal class RemoteConfigRepository : AbstractConfigRepository
                 catch (ApolloConfigStatusCodeException ex)
                 {
                     var statusCodeException = ex;
-                    //config not found
+
+                    // config not found
                     if (ex.StatusCode == HttpStatusCode.NotFound)
                     {
                         notFound = true;
@@ -176,38 +174,29 @@ internal class RemoteConfigRepository : AbstractConfigRepository
         ApolloConfig? previousConfig)
     {
         if (!uri.EndsWith("/", StringComparison.Ordinal))
-        {
             uri += "/";
-        }
-        //Looks like .Net will handle all the url encoding for me...
+
+        // Looks like .Net will handle all the url encoding for me...
         var path = $"configs/{appId}/{cluster}/{namespaceName}";
         var uriBuilder = new UriBuilder(uri + path);
 #if NETFRAMEWORK
-        //不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
+        // 不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
         var query = new Dictionary<string, string>();
 #else
-        var query = HttpUtility.ParseQueryString("");
+        var query = HttpUtility.ParseQueryString(string.Empty);
 #endif
         if (previousConfig != null)
-        {
             query["releaseKey"] = previousConfig.ReleaseKey;
-        }
 
         if (!string.IsNullOrEmpty(dataCenter))
-        {
             query["dataCenter"] = dataCenter!;
-        }
 
         var localIp = _options.LocalIp;
         if (!string.IsNullOrEmpty(localIp))
-        {
             query["ip"] = localIp;
-        }
 
         if (remoteMessages != null)
-        {
             query["messages"] = JsonUtil.Serialize(remoteMessages);
-        }
 #if NETFRAMEWORK
         uriBuilder.Query = QueryUtils.Build(query);
 #else
@@ -238,18 +227,16 @@ internal class RemoteConfigRepository : AbstractConfigRepository
     }
 
     private bool _disposed;
+
     protected override void Dispose(bool disposing)
     {
         if (_disposed)
             return;
 
         if (disposing)
-        {
             _timer.Dispose();
-        }
 
-        //释放非托管资源
-
+        // 释放非托管资源
         _disposed = true;
     }
 

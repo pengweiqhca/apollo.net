@@ -2,7 +2,6 @@
 using Com.Ctrip.Framework.Apollo.Enums;
 using Com.Ctrip.Framework.Apollo.Foundation;
 using Com.Ctrip.Framework.Apollo.Logging;
-using System.Collections.ObjectModel;
 using System.Configuration;
 
 namespace Com.Ctrip.Framework.Apollo.Util;
@@ -10,12 +9,13 @@ namespace Com.Ctrip.Framework.Apollo.Util;
 public class ConfigUtil : IApolloOptions
 {
     public static NameValueCollection? AppSettings { get; set; }
+
+    private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ConfigUtil));
     private static HttpMessageHandler _handler = new HttpClientHandler();
     private static ICacheFileProvider? _cacheFileProvider;
-    private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ConfigUtil));
 
-    private int _refreshInterval = 5 * 60 * 1000; //5 minutes
-    private int _timeout = 5000; //5 seconds, c# has no connectTimeout but response timeout
+    private int _refreshInterval = 5 * 60 * 1000; // 5 minutes
+    private int _timeout = 5000; // 5 seconds, c# has no connectTimeout but response timeout
     private int _startupTimeout = 30000;
 
     public ConfigUtil()
@@ -27,10 +27,8 @@ public class ConfigUtil : IApolloOptions
         InitCluster();
         InitStartupTimeout();
 
-        var delimiter = GetAppConfig(nameof(SpecialDelimiter))
+        SpecialDelimiter = GetAppConfig(nameof(SpecialDelimiter))
             ?.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
-
-        SpecialDelimiter = delimiter;
 
         LocalIp = NetworkInterfaceManager.GetHostIp(PreferSubnet);
     }
@@ -50,7 +48,7 @@ public class ConfigUtil : IApolloOptions
         var appSettings = AppSettings ?? ConfigurationManager.AppSettings;
 
         string? value;
-        if (environmentVariablePriority == "1" || string.Compare("true", environmentVariablePriority, StringComparison.OrdinalIgnoreCase) == 0)
+        if (environmentVariablePriority == "1" || string.Equals("true", environmentVariablePriority, StringComparison.OrdinalIgnoreCase))
         {
             value = Environment.GetEnvironmentVariable(key1);
 
@@ -105,13 +103,13 @@ public class ConfigUtil : IApolloOptions
 
     private void InitCluster()
     {
-        //Load data center from app.config
+        // Load data center from app.config
         var cluster = GetAppConfig(nameof(Cluster));
 
-        //Use data center as cluster
+        // Use data center as cluster
         if (string.IsNullOrWhiteSpace(cluster)) cluster = DataCenter;
 
-        //Use default cluster
+        // Use default cluster
         if (string.IsNullOrWhiteSpace(cluster)) cluster = ConfigConsts.ClusterNameDefault;
 
         Cluster = cluster!;
@@ -165,7 +163,7 @@ public class ConfigUtil : IApolloOptions
 
     public int RefreshInterval => _refreshInterval;
 
-    public string LocalCacheDir => GetAppConfig(nameof(LocalCacheDir)) ?? Path.Combine(ConfigConsts.DefaultLocalCacheDir, AppId);
+    public string? LocalCacheDir => GetAppConfig(nameof(LocalCacheDir));
 
     public bool EnablePlaceholder => bool.TryParse(GetAppConfig(nameof(EnablePlaceholder)), out var enablePlaceholder) && enablePlaceholder;
 
@@ -196,6 +194,4 @@ public class ConfigUtil : IApolloOptions
     }
 
     public static void UseCacheFileProvider(ICacheFileProvider cacheFileProvider) => Interlocked.CompareExchange(ref _cacheFileProvider, cacheFileProvider, null);
-
-    public void Dispose() { }
 }

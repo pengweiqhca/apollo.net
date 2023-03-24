@@ -14,11 +14,10 @@ internal class ConfigServiceLocator : IDisposable
     private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ConfigServiceLocator));
 
     private readonly HttpUtil _httpUtil;
-
     private readonly IApolloOptions _options;
+    private readonly Timer? _timer;
     private volatile IList<ServiceDto> _configServices = new List<ServiceDto>();
     private Task? _updateConfigServicesTask;
-    private readonly Timer? _timer;
 
     public ConfigServiceLocator(HttpUtil httpUtil, IApolloOptions configUtil)
     {
@@ -60,7 +59,7 @@ internal class ConfigServiceLocator : IDisposable
         return services;
     }
 
-    private async void SchedulePeriodicRefresh(object _)
+    private async void SchedulePeriodicRefresh(object? state)
     {
         try
         {
@@ -132,10 +131,10 @@ internal class ConfigServiceLocator : IDisposable
 
             var uriBuilder = new UriBuilder(uri + "services/config");
 #if NETFRAMEWORK
-            //不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
+            // 不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
             var query = new Dictionary<string, string>();
 #else
-            var query = HttpUtility.ParseQueryString("");
+            var query = HttpUtility.ParseQueryString(string.Empty);
 #endif
             query["appId"] = _options.AppId;
 

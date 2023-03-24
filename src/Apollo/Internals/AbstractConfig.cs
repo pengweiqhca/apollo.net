@@ -8,7 +8,9 @@ namespace Com.Ctrip.Framework.Apollo.Internals;
 public abstract class AbstractConfig : IConfig
 {
     private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(AbstractConfig));
+
     public event ConfigChangeEvent? ConfigChanged;
+
     private static readonly TaskFactory ExecutorService;
 
     static AbstractConfig() => ExecutorService = new(new LimitedConcurrencyLevelTaskScheduler(5));
@@ -54,23 +56,18 @@ public abstract class AbstractConfig : IConfig
         ICollection<ConfigChange> changes = new LinkedList<ConfigChange>();
 
         foreach (var newKey in newKeys)
-        {
             changes.Add(new(this, newKey, null, current.GetProperty(newKey), PropertyChangeType.Added));
-        }
 
         foreach (var removedKey in removedKeys)
-        {
             changes.Add(new(this, removedKey, previous.GetProperty(removedKey), null, PropertyChangeType.Deleted));
-        }
 
         foreach (var commonKey in commonKeys)
         {
             var previousValue = previous.GetProperty(commonKey);
             var currentValue = current.GetProperty(commonKey);
-            if (string.Equals(previousValue, currentValue))
-            {
+            if (string.Equals(previousValue, currentValue, StringComparison.Ordinal))
                 continue;
-            }
+
             changes.Add(new(this, commonKey, previousValue, currentValue, PropertyChangeType.Modified));
         }
 

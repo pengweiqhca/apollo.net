@@ -8,6 +8,7 @@ public abstract class AbstractConfigRepository : IConfigRepository
     private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(AbstractConfigRepository));
 
     private readonly List<IRepositoryChangeListener> _listeners = new();
+
     public string Namespace { get; }
 
     protected AbstractConfigRepository(string @namespace) => Namespace = @namespace;

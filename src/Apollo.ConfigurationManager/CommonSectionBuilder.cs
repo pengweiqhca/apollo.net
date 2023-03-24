@@ -47,15 +47,15 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
 
     public override void Initialize(string name, NameValueCollection config)
     {
-        base.Initialize(name, config);
+        base.Initialize(name, config.ThrowIfNull());
 
         _keyPrefix = config["keyPrefix"]?.TrimEnd(':');
     }
 
     public override ConfigurationSection ProcessConfigurationSection(ConfigurationSection configSection)
     {
-        Bind(configSection, GetConfig(), string.IsNullOrWhiteSpace(_keyPrefix ??= configSection.SectionInformation.SectionName)
-            ? new("", "")
+        Bind(configSection.ThrowIfNull(), GetConfig(), string.IsNullOrWhiteSpace(_keyPrefix ??= configSection.SectionInformation.SectionName)
+            ? new(string.Empty, string.Empty)
             : new ConfigKey(_keyPrefix!.Substring(_keyPrefix!.LastIndexOf(':') + 1), _keyPrefix));
 
         return configSection;
@@ -138,7 +138,7 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
         MethodInfo GetMethod(string method, params Type[] parameterTypes)
         {
             var ms = methods.Where(m => m.Name == method).ToArray();
-            if (parameterTypes.Length < 1) return ms.FirstOrDefault(m => m.GetParameters().Length == 0) ?? ms.First();
+            if (parameterTypes.Length < 1) return Array.Find(ms, m => m.GetParameters().Length == 0) ?? ms[0];
 
             return ms.First(m =>
             {
@@ -156,14 +156,14 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
 
         var il = method.GetILGenerator();
 
-        //BaseRemove(GetElementKey(element));
+        // BaseRemove(GetElementKey(element));
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldarg_1);
         il.Emit(OpCodes.Callvirt, GetMethod("GetElementKey"));
         il.Emit(OpCodes.Call, GetMethod("BaseRemove", typeof(object)));
 
-        //BaseAdd(element);
+        // BaseAdd(element);
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldarg_1);
         il.Emit(OpCodes.Callvirt, GetMethod("BaseAdd", typeof(ConfigurationElement)));

@@ -10,6 +10,9 @@
     <None Include="..\..\icon.png" Pack="true" PackagePath="\" Visible="false" />
 
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.*" PrivateAssets="All" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.*" PrivateAssets="All" />
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.*" PrivateAssets="All" />
+    <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.*" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

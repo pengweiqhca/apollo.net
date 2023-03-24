@@ -3,7 +3,8 @@
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>..\..\Apollo.snk</AssemblyOriginatorKeyFile>
     <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>11.0</LangVersion>
+    <NeutralLanguage>zh-cn</NeutralLanguage>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);CS0414;CS0436;CS1591</NoWarn>

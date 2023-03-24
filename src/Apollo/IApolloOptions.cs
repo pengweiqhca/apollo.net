@@ -1,11 +1,11 @@
 ﻿using Com.Ctrip.Framework.Apollo.Enums;
-using System.Collections.ObjectModel;
 
 namespace Com.Ctrip.Framework.Apollo;
 
-public interface IApolloOptions : IDisposable
+public interface IApolloOptions
 {
     string AppId { get; }
+
     /// <summary>
     /// Get the data center info for the current application.
     /// </summary>

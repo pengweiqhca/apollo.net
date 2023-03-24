@@ -1,5 +1,6 @@
 ﻿namespace Com.Ctrip.Framework.Apollo.Logging;
 
+#pragma warning disable CA1069, RCS1234
 public enum LogLevel
 {
     Trace = 10,

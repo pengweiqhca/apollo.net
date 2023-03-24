@@ -12,6 +12,7 @@ internal static class ApolloConfigurationManager
 {
     private static readonly bool ConfigEnablePlaceholder;
     private static readonly Exception? Exception;
+
     public static IConfigManager? Manager { get; }
 
     static ApolloConfigurationManager()

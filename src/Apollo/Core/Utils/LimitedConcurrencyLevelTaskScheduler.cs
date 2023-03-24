@@ -2,7 +2,7 @@
 
 // Provides a task scheduler that ensures a maximum concurrency level while
 // running on top of the thread pool.
-internal class LimitedConcurrencyLevelTaskScheduler : TaskScheduler
+internal sealed class LimitedConcurrencyLevelTaskScheduler : TaskScheduler
 {
     // Indicates whether the current thread is processing work items.
     [ThreadStatic]
@@ -22,7 +22,7 @@ internal class LimitedConcurrencyLevelTaskScheduler : TaskScheduler
     }
 
     // Queues a task to the scheduler.
-    protected sealed override void QueueTask(Task task)
+    protected override void QueueTask(Task task)
     {
         // Add the task to the list of tasks to be processed.  If there aren't enough
         // delegates currently queued or running to process tasks, schedule another.
@@ -62,7 +62,7 @@ internal class LimitedConcurrencyLevelTaskScheduler : TaskScheduler
                         }
 
                         // Get the next item from the queue
-                        item = _tasks.First.Value;
+                        item = _tasks.First!.Value;
                         _tasks.RemoveFirst();
                     }
 
@@ -70,19 +70,21 @@ internal class LimitedConcurrencyLevelTaskScheduler : TaskScheduler
                     TryExecuteTask(item);
                 }
             }
+
             // We're done processing items on the current thread
             finally { _currentThreadIsProcessingItems = false; }
         }, null);
     }
 
     // Attempts to execute the specified task on the current thread.
-    protected sealed override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
+    protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
     {
         // If this thread isn't already processing a task, we don't support inlining
         if (!_currentThreadIsProcessingItems) return false;
 
         // If the task was previously queued, remove it from the queue
         if (taskWasPreviouslyQueued)
+
             // Try to run the task.
             return TryDequeue(task) && TryExecuteTask(task);
 
@@ -90,23 +92,24 @@ internal class LimitedConcurrencyLevelTaskScheduler : TaskScheduler
     }
 
     // Attempt to remove a previously scheduled task from the scheduler.
-    protected sealed override bool TryDequeue(Task task)
+    protected override bool TryDequeue(Task task)
     {
         lock (_tasks) return _tasks.Remove(task);
     }
 
     // Gets the maximum concurrency level supported by this scheduler.
-    public sealed override int MaximumConcurrencyLevel { get; }
+    public override int MaximumConcurrencyLevel { get; }
 
     // Gets an enumerable of the tasks currently scheduled on this scheduler.
-    protected sealed override IEnumerable<Task> GetScheduledTasks()
+    protected override IEnumerable<Task> GetScheduledTasks()
     {
         var lockTaken = false;
         try
         {
             Monitor.TryEnter(_tasks, ref lockTaken);
             if (lockTaken) return _tasks;
-            else throw new NotSupportedException();
+
+            throw new NotSupportedException();
         }
         finally
         {

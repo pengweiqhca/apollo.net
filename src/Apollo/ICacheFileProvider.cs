@@ -24,6 +24,6 @@ public class LocalPlaintextCacheFileProvider : ICacheFileProvider
     {
         using var file = new FileStream(configFile, FileMode.Create);
 
-        properties.Store(file);
+        properties.ThrowIfNull().Store(file);
     }
 }

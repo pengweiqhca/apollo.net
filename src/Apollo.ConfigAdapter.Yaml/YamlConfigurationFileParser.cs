@@ -1,13 +1,14 @@
-﻿using YamlDotNet.Core;
+﻿using System.Globalization;
+using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 
 namespace Com.Ctrip.Framework.Apollo.ConfigAdapter;
 
-internal class YamlConfigurationFileParser
+internal sealed class YamlConfigurationFileParser
 {
     private readonly IDictionary<string, string> _data = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     private readonly Stack<string> _context = new();
-    private string _currentPath = "";
+    private string _currentPath = string.Empty;
 
     public IDictionary<string, string> Parse(TextReader reader)
     {
@@ -60,7 +61,7 @@ internal class YamlConfigurationFileParser
 
         if (_data.ContainsKey(_currentPath)) throw new FormatException($"A duplicate key '{_currentPath}' was found.");
 
-        _data[_currentPath] = IsNullValue(scalarNode) ? "" : scalarNode.Value!;
+        _data[_currentPath] = IsNullValue(scalarNode) ? string.Empty : scalarNode.Value!;
 
         ExitContext();
     }
@@ -110,7 +111,7 @@ internal class YamlConfigurationFileParser
         EnterContext(context);
 
         for (var index = 0; index < sequenceNode.Children.Count; index++)
-            VisitYamlNode(index.ToString(), sequenceNode.Children[index]);
+            VisitYamlNode(index.ToString(CultureInfo.InvariantCulture), sequenceNode.Children[index]);
 
         ExitContext();
     }

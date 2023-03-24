@@ -9,19 +9,22 @@ public abstract class ApolloConfigurationBuilder : ConfigurationBuilder
 {
     private static readonly object Lock = new();
     private static readonly FieldInfo ConfigurationManagerReset = typeof(ConfigurationManager).GetField("s_initState", BindingFlags.NonPublic | BindingFlags.Static)!;
+
     public static bool AppSettingsInitialized { get; private set; }
 
     private IConfig? _config;
+
     public IReadOnlyList<string>? Namespaces { get; private set; }
+
     public string? SectionName { get; private set; }
 
     public override void Initialize(string name, NameValueCollection config)
     {
-        Namespaces = config["namespace"]?.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+        Namespaces = config.ThrowIfNull()["namespace"]?.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
         if (this is not AppSettingsSectionBuilder)
         {
-            _ = ConfigurationManager.AppSettings; //让AppSettings必须最先被初始化
+            _ = ConfigurationManager.AppSettings; // 让AppSettings必须最先被初始化
 
             AppSettingsInitialized = true;
         }
@@ -31,7 +34,7 @@ public abstract class ApolloConfigurationBuilder : ConfigurationBuilder
 
     public override XmlNode ProcessRawXml(XmlNode rawXml)
     {
-        SectionName = rawXml.Name;
+        SectionName = rawXml.ThrowIfNull().Name;
 
         return base.ProcessRawXml(rawXml);
     }
@@ -50,10 +53,7 @@ public abstract class ApolloConfigurationBuilder : ConfigurationBuilder
             if (Namespaces == null || Namespaces.Count == 0)
 #pragma warning disable 618
                 config = ApolloConfigurationManager.GetAppConfig();
-            else if (Namespaces.Count == 1)
-                config = ApolloConfigurationManager.GetConfig(Namespaces[0]);
-            else
-                config = ApolloConfigurationManager.GetConfig(Namespaces);
+            else config = Namespaces.Count == 1 ? ApolloConfigurationManager.GetConfig(Namespaces[0]) : ApolloConfigurationManager.GetConfig(Namespaces);
 #pragma warning restore 618
             _config = config.ConfigureAwait(false).GetAwaiter().GetResult();
 
