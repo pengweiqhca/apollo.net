@@ -1,4 +1,5 @@
-﻿using Com.Ctrip.Framework.Apollo.Util;
+﻿using Com.Ctrip.Framework.Apollo.Internals;
+using Com.Ctrip.Framework.Apollo.Util;
 using System.Configuration;
 
 namespace Com.Ctrip.Framework.Apollo;

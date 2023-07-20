@@ -12,7 +12,7 @@ namespace Com.Ctrip.Framework.Apollo.Internals;
 
 internal class RemoteConfigLongPollService : IDisposable
 {
-    private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () =>
+    private static readonly Func<Action<LogLevel, FormattableString, Exception?>> Logger = () =>
         LogManager.CreateLogger(typeof(RemoteConfigLongPollService));
 
     private const long InitNotificationId = -1;
@@ -23,6 +23,7 @@ internal class RemoteConfigLongPollService : IDisposable
     private readonly ISchedulePolicy _longPollSuccessSchedulePolicyInMs;
     private readonly ConcurrentDictionary<string, ISet<RemoteConfigRepository>> _longPollNamespaces;
     private readonly ConcurrentDictionary<string, long?> _notifications;
+
     private readonly ConcurrentDictionary<string, ApolloNotificationMessages>
         _remoteNotificationMessages; // namespaceName -> watchedKey -> notificationId
 
@@ -57,7 +58,7 @@ internal class RemoteConfigLongPollService : IDisposable
     {
         if (Interlocked.CompareExchange(ref _cts, new(), null) != null) return;
 
-        bool restoreFlow = false;
+        var restoreFlow = false;
         try
         {
             if (!ExecutionContext.IsFlowSuppressed())
@@ -70,7 +71,7 @@ internal class RemoteConfigLongPollService : IDisposable
         }
         catch (Exception ex)
         {
-            var exception = new ApolloConfigException("Schedule long polling refresh failed", ex);
+            var exception = new ApolloConfigException($"Schedule long polling refresh failed", ex);
             Logger().Warn(exception.GetDetailMessage());
         }
         finally
@@ -85,7 +86,7 @@ internal class RemoteConfigLongPollService : IDisposable
         var random = new Random();
         ServiceDto? lastServiceDto = null;
 
-        while (!cancellationToken.IsCancellationRequested)
+        while (!(cancellationToken is { IsCancellationRequested: true }))
         {
             var sleepTime = 50; // default 50 ms
             Uri? url = null;
@@ -102,22 +103,22 @@ internal class RemoteConfigLongPollService : IDisposable
                 Logger().Debug($"Long polling from {url}");
 
                 var response = await _httpUtil
-                    .DoGetAsync<IReadOnlyCollection<ApolloConfigNotification>>(url, 600000)
+                    .DoGetAsync<IReadOnlyCollection<ApolloConfigNotification>>(url, 600000, cancellationToken)
                     .ConfigureAwait(false);
 
                 Logger().Debug($"Long polling response: {response.StatusCode}, url: {url}");
 
-                if (response.StatusCode == HttpStatusCode.OK && response.Body != null)
+                if (response is { StatusCode: HttpStatusCode.OK, Body: not null })
                 {
                     UpdateNotifications(response.Body);
+
                     UpdateRemoteNotifications(response.Body);
-                    Notify(lastServiceDto, response.Body);
+
+                    await Notify(lastServiceDto, response.Body).ConfigureAwait(false);
                     _longPollSuccessSchedulePolicyInMs.Success();
                 }
                 else
-                {
                     sleepTime = _longPollSuccessSchedulePolicyInMs.Fail();
-                }
 
                 // try to load balance
                 if (response.StatusCode == HttpStatusCode.NotModified && random.NextDouble() >= 0.5)
@@ -142,13 +143,14 @@ internal class RemoteConfigLongPollService : IDisposable
         }
     }
 
-    private void Notify(ServiceDto lastServiceDto, IReadOnlyCollection<ApolloConfigNotification>? notifications)
+    private async Task Notify(ServiceDto lastServiceDto, IReadOnlyCollection<ApolloConfigNotification>? notifications)
     {
         if (notifications == null || notifications.Count == 0) return;
 
         foreach (var notification in notifications)
         {
             var namespaceName = notification.NamespaceName;
+            if (namespaceName == null) continue;
 
             // create a new list to avoid ConcurrentModificationException
             var toBeNotified = new List<RemoteConfigRepository>();
@@ -163,16 +165,15 @@ internal class RemoteConfigLongPollService : IDisposable
             if (!_remoteNotificationMessages.TryGetValue(namespaceName, out var originalMessages)) return;
 
             var remoteMessages = originalMessages.Clone();
-            foreach (var remoteConfigRepository in toBeNotified)
+
+            try
             {
-                try
-                {
-                    remoteConfigRepository.OnLongPollNotified(lastServiceDto, remoteMessages);
-                }
-                catch (Exception ex)
-                {
-                    Logger().Warn(ex);
-                }
+                await Task.WhenAll(toBeNotified.Select(remoteConfigRepository =>
+                    remoteConfigRepository.OnLongPollNotified(lastServiceDto, remoteMessages))).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Logger().Warn(ex);
             }
         }
     }
@@ -184,7 +185,7 @@ internal class RemoteConfigLongPollService : IDisposable
             if (string.IsNullOrEmpty(notification.NamespaceName)) continue;
 
             var namespaceName = notification.NamespaceName;
-            if (_notifications.ContainsKey(namespaceName))
+            if (namespaceName != null && _notifications.ContainsKey(namespaceName))
                 _notifications[namespaceName] = notification.NotificationId;
 
             // since .properties are filtered out by default, so we need to check if there is notification with .properties suffix
@@ -197,24 +198,19 @@ internal class RemoteConfigLongPollService : IDisposable
     private void UpdateRemoteNotifications(IEnumerable<ApolloConfigNotification> deltaNotifications)
     {
         foreach (var notification in deltaNotifications)
-        {
-            if (string.IsNullOrEmpty(notification.NamespaceName) || notification.Messages == null ||
-                notification.Messages.Details.Count < 1) continue;
-
-            var localRemoteMessages = _remoteNotificationMessages.GetOrAdd(notification.NamespaceName, _ => new());
-
-            localRemoteMessages.MergeFrom(notification.Messages);
-        }
+            if (!string.IsNullOrEmpty(notification.NamespaceName) && notification.Messages is { Details.Count: >= 1 })
+                _remoteNotificationMessages.GetOrAdd(notification.NamespaceName!, _ => new())
+                    .MergeFrom(notification.Messages);
     }
 
-    private Uri AssembleLongPollRefreshUrl(string uri, string appId, string cluster, string? dataCenter)
+    private Uri AssembleLongPollRefreshUrl(string? uri, string appId, string cluster, string? dataCenter)
     {
-        if (!uri.EndsWith("/", StringComparison.Ordinal)) uri += "/";
+        if (uri?.EndsWith("/", StringComparison.Ordinal) == false) uri += "/";
 
         var uriBuilder = new UriBuilder(uri + "notifications/v2");
 #if NETFRAMEWORK
         // 不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
-        var query = new Dictionary<string, string>();
+        var query = new Dictionary<string, string?>();
 #else
         var query = HttpUtility.ParseQueryString(string.Empty);
 #endif
@@ -222,12 +218,10 @@ internal class RemoteConfigLongPollService : IDisposable
         query["cluster"] = cluster;
         query["notifications"] = AssembleNotifications(_notifications);
 
-        if (!string.IsNullOrEmpty(dataCenter))
-            query["dataCenter"] = dataCenter!;
+        if (!string.IsNullOrEmpty(dataCenter)) query["dataCenter"] = dataCenter!;
 
         var localIp = _options.LocalIp;
-        if (!string.IsNullOrEmpty(localIp))
-            query["ip"] = localIp;
+        if (!string.IsNullOrEmpty(localIp)) query["ip"] = localIp;
 #if NETFRAMEWORK
         uriBuilder.Query = QueryUtils.Build(query);
 #else

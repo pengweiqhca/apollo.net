@@ -19,7 +19,7 @@ public class AppClusterTest : BaseTest
 
         Assert.NotNull(result);
 
-        var @default = result.FirstOrDefault(ec => ec.Env == "DEV");
+        var @default = result.FirstOrDefault(ec => ec is { Env: "DEV" });
 
         Assert.NotNull(@default);
 
@@ -74,7 +74,7 @@ public class AppClusterTest : BaseTest
         Dump(result);
 
         Assert.NotNull(result);
-        Assert.Contains(result, ns => ns.NamespaceName == ConfigConsts.NamespaceApplication);
-        Assert.NotEmpty(result.FirstOrDefault(ns => ns.NamespaceName == ConfigConsts.NamespaceApplication)?.Items ?? Array.Empty<Item>());
+        Assert.Contains(result, ns => ns is { NamespaceName: ConfigConsts.NamespaceApplication });
+        Assert.NotEmpty(result.FirstOrDefault(ns => ns is { NamespaceName: ConfigConsts.NamespaceApplication })?.Items ?? Array.Empty<Item>());
     }
 }

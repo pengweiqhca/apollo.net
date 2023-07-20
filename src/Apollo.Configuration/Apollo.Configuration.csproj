@@ -13,6 +13,7 @@ $(PackageReleaseNotes)</Description>
     <RootNamespace>Com.Ctrip.Framework.Apollo</RootNamespace>
     <TargetFrameworks>net461;net6.0</TargetFrameworks>
     <Version>$(ApolloVersion).1</Version>
+    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit</PolySharpExcludeGeneratedTypes>
   </PropertyGroup>
 
   <ItemGroup>

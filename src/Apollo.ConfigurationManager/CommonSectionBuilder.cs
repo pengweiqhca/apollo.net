@@ -1,9 +1,10 @@
-﻿using System.Configuration;
+﻿using Com.Ctrip.Framework.Apollo.Internals;
+using System.Configuration;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.ExceptionServices;
-using static Com.Ctrip.Framework.Apollo.ConfigExtensions;
+using static Com.Ctrip.Framework.Apollo.Internals.ConfigExtensions;
 
 namespace Com.Ctrip.Framework.Apollo;
 
@@ -16,19 +17,16 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
 
     static CommonSectionBuilder()
     {
-        var set = typeof(ConfigurationElement).GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            .First(p =>
-            {
-                var ip = p.GetIndexParameters();
-
-                return ip.Length == 1 && ip[0].ParameterType == typeof(ConfigurationProperty);
-            })
+        var set = typeof(ConfigurationElement)
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .First(static p => p.SetMethod != null && p.GetIndexParameters() is [var ip] &&
+                ip.ParameterType == typeof(ConfigurationProperty))
             .SetMethod;
 
         var convertFromString = typeof(ConfigurationProperty).GetMethod("ConvertFromString", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
         var createNewElement = typeof(ConfigurationElementCollection).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            .First(m => m.Name == nameof(CreateNewElement) && m.GetParameters().Length == 0);
+            .First(m => m.Name == nameof(CreateNewElement) && m.GetParameters() is { Length: 0 });
 
         var param0 = Expression.Parameter(typeof(ConfigurationElementCollection));
         var param1 = Expression.Parameter(typeof(ConfigurationElement));
@@ -56,7 +54,7 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
     {
         Bind(configSection.ThrowIfNull(), GetConfig(), string.IsNullOrWhiteSpace(_keyPrefix ??= configSection.SectionInformation.SectionName)
             ? new(string.Empty, string.Empty)
-            : new ConfigKey(_keyPrefix!.Substring(_keyPrefix!.LastIndexOf(':') + 1), _keyPrefix));
+            : new ConfigKey(_keyPrefix![(_keyPrefix!.LastIndexOf(':') + 1)..], _keyPrefix));
 
         return configSection;
     }
@@ -79,7 +77,6 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
                 if (element == null) property.SetValue(configElement, element = Activator.CreateInstance(property.PropertyType));
 
                 if (element is ConfigurationElementCollection cec)
-                {
                     foreach (var child in config.GetChildren(key))
                     {
                         var ele = CreateNewElement(cec);
@@ -88,7 +85,6 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
 
                         Add(cec, ele);
                     }
-                }
                 else if (element is ConfigurationElement ce) Bind(ce, config, new(cpa.Name, key));
             }
             else
@@ -138,7 +134,7 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
         MethodInfo GetMethod(string method, params Type[] parameterTypes)
         {
             var ms = methods.Where(m => m.Name == method).ToArray();
-            if (parameterTypes.Length < 1) return Array.Find(ms, m => m.GetParameters().Length == 0) ?? ms[0];
+            if (parameterTypes.Length < 1) return Array.Find(ms, m => m.GetParameters() is { Length: 0 }) ?? ms[0];
 
             return ms.First(m =>
             {

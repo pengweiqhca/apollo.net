@@ -1,13 +1,4 @@
-﻿using Com.Ctrip.Framework.Apollo.Model;
-
-namespace Com.Ctrip.Framework.Apollo;
-
-/// <summary>
-/// Config change event fired when there is any config change for the namespace.
-/// </summary>
-/// <param name="sender"> the sender </param>
-/// <param name="args"> the changes </param>
-public delegate void ConfigChangeEvent(IConfig sender, ConfigChangeEventArgs args);
+﻿namespace Com.Ctrip.Framework.Apollo;
 
 public interface IConfig
 {
@@ -26,5 +17,5 @@ public interface IConfig
     /// <summary>
     /// Config change event subscriber
     /// </summary>
-    event ConfigChangeEvent? ConfigChanged;
+    event Action<IConfig>? ConfigChanged;
 }

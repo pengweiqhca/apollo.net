@@ -1,12 +1,13 @@
-﻿using Com.Ctrip.Framework.Apollo.Util;
+﻿using Com.Ctrip.Framework.Apollo.Exceptions;
+using Com.Ctrip.Framework.Apollo.Util;
 
 namespace Com.Ctrip.Framework.Apollo.Logging;
 
 public static class LogManager
 {
-    private static readonly Action<LogLevel, string, Exception?> Noop = (_, _, _) => { };
+    private static readonly Action<LogLevel, FormattableString, Exception?> Noop = (_, _, _) => { };
 
-    public static Func<string, Action<LogLevel, string, Exception?>> LogFactory { get; set; } = _ => Noop;
+    public static Func<string, Action<LogLevel, FormattableString, Exception?>> LogFactory { get; set; } = _ => Noop;
 
     public static void UseConsoleLogging(LogLevel minimumLevel) =>
         LogFactory = name => (level, message, exception) =>
@@ -18,7 +19,7 @@ public static class LogManager
                 : $"{DateTime.Now:HH:mm:ss} [{level}] {name} {message} - {exception.GetDetailMessage()}");
         };
 
-    internal static Action<LogLevel, string, Exception?> CreateLogger(Type type)
+    internal static Action<LogLevel, FormattableString, Exception?> CreateLogger(Type type)
     {
         try
         {
@@ -32,24 +33,26 @@ public static class LogManager
         }
     }
 
-    internal static void Error(this Action<LogLevel, string, Exception?> logger, string message) =>
-        logger(LogLevel.Error, message, null);
+    internal static void Error(this Action<LogLevel, FormattableString, Exception?> logger,
+        FormattableString message) => logger(LogLevel.Error, message, null);
 
-    internal static void Error(this Action<LogLevel, string, Exception?> logger, Exception exception) =>
-        logger(LogLevel.Error, exception.Message, exception);
+    internal static void Error(this Action<LogLevel, FormattableString, Exception?> logger, Exception exception) =>
+        logger(LogLevel.Error,
+            exception is ApolloConfigException ace ? ace.FormattableMessage : $"{exception.Message}", exception);
 
-    internal static void Error(this Action<LogLevel, string, Exception?> logger, string message, Exception exception) =>
-        logger(LogLevel.Error, message, exception);
+    internal static void Error(this Action<LogLevel, FormattableString, Exception?> logger, FormattableString message,
+        Exception exception) => logger(LogLevel.Error, message, exception);
 
-    internal static void Warn(this Action<LogLevel, string, Exception?> logger, Exception exception) =>
-        logger(LogLevel.Warning, exception.Message, exception);
+    internal static void Warn(this Action<LogLevel, FormattableString, Exception?> logger, Exception exception) =>
+        logger(LogLevel.Warning,
+            exception is ApolloConfigException ace ? ace.FormattableMessage : $"{exception.Message}", exception);
 
-    internal static void Warn(this Action<LogLevel, string, Exception?> logger, string message) =>
+    internal static void Warn(this Action<LogLevel, FormattableString, Exception?> logger, FormattableString message) =>
         logger(LogLevel.Warning, message, null);
 
-    internal static void Warn(this Action<LogLevel, string, Exception?> logger, string message, Exception exception) =>
-        logger(LogLevel.Warning, message, exception);
+    internal static void Warn(this Action<LogLevel, FormattableString, Exception?> logger, FormattableString message,
+        Exception exception) => logger(LogLevel.Warning, message, exception);
 
-    internal static void Debug(this Action<LogLevel, string, Exception?> logger, string message) =>
-        logger(LogLevel.Debug, message, null);
+    internal static void Debug(this Action<LogLevel, FormattableString, Exception?> logger,
+        FormattableString message) => logger(LogLevel.Debug, message, null);
 }

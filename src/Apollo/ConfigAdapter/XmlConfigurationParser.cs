@@ -87,9 +87,7 @@ internal static class XmlConfigurationParser
             // because a self-closing element contains an end within itself
             if (preNodeType == XmlNodeType.Element &&
                 reader.IsEmptyElement)
-            {
                 preNodeType = XmlNodeType.EndElement;
-            }
         }
 
         return data;
@@ -98,13 +96,9 @@ internal static class XmlConfigurationParser
     private static void SkipUntilRootElement(XmlReader reader)
     {
         while (reader.Read())
-        {
-            if (reader.NodeType != XmlNodeType.XmlDeclaration &&
-                reader.NodeType != XmlNodeType.ProcessingInstruction)
-            {
+            if (reader is not { NodeType: XmlNodeType.XmlDeclaration } &&
+                reader is not { NodeType: XmlNodeType.ProcessingInstruction })
                 break;
-            }
-        }
     }
 
     private static string GetLineInfo(XmlReader reader) =>
@@ -143,9 +137,7 @@ internal static class XmlConfigurationParser
             prefixStack.Push(ConfigurationPath.Combine(lastPrefix, reader.Value));
         }
         else
-        {
             prefixStack.Push(reader.Value);
-        }
     }
 
     // Common attributes contribute to key-value pairs

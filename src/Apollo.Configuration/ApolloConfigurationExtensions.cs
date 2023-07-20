@@ -22,7 +22,7 @@ namespace Microsoft.Extensions.Configuration
             var repositoryFactory = new ConfigRepositoryFactory(options ?? throw new ArgumentNullException(nameof(options)));
 
             var acb = new ApolloConfigurationBuilder(builder, repositoryFactory);
-            if (options is ApolloOptions { Namespaces: { } } ao)
+            if (options is ApolloOptions { Namespaces: not null } ao)
                 foreach (var ns in ao.Namespaces) acb.AddNamespace(ns);
 
             builder.Properties[typeof(ApolloConfigurationExtensions).FullName] = acb;
@@ -50,7 +50,7 @@ namespace Com.Ctrip.Framework.Apollo
         /// <param name="builder"></param>
         /// <param name="format">The content format of the default namespace</param>
         public static IApolloConfigurationBuilder AddDefault(this IApolloConfigurationBuilder builder, ConfigFileFormat format = ConfigFileFormat.Properties) =>
-            builder.AddNamespace(ConfigConsts.NamespaceApplication, null, format);
+            builder.AddNamespace(ConfigConsts.NamespaceApplication, format);
 
         /// <summary>
         /// Add namespace
@@ -58,17 +58,7 @@ namespace Com.Ctrip.Framework.Apollo
         /// <param name="builder"></param>
         /// <param name="namespace">The namespace name</param>
         /// <param name="format">The content format of the <paramref name="namespace"/></param>
-        public static IApolloConfigurationBuilder AddNamespace(this IApolloConfigurationBuilder builder, string @namespace, ConfigFileFormat format = ConfigFileFormat.Properties) =>
-            builder.AddNamespace(@namespace, null, format);
-
-        /// <summary>
-        /// Add namespace
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="namespace">The namespace name</param>
-        /// <param name="sectionKey">As prefix adds to <see cref="IConfiguration"/>, Using <paramref name="sectionKey"/> as an argument to <see cref="IConfiguration.GetSection(string)"/> to get the content of <paramref name="namespace"/>.</param>
-        /// <param name="format">The content format of the <paramref name="namespace"/></param>
-        public static IApolloConfigurationBuilder AddNamespace(this IApolloConfigurationBuilder builder, string @namespace, string? sectionKey, ConfigFileFormat format = ConfigFileFormat.Properties)
+        public static IApolloConfigurationBuilder AddNamespace(this IApolloConfigurationBuilder builder, string @namespace, ConfigFileFormat format = ConfigFileFormat.Properties)
         {
             if (string.IsNullOrWhiteSpace(@namespace)) throw new ArgumentNullException(nameof(@namespace));
 
@@ -81,7 +71,6 @@ namespace Com.Ctrip.Framework.Apollo
 
             var previous = builder.Sources.FirstOrDefault(source =>
                 source is ApolloConfigurationProvider apollo &&
-                apollo.SectionKey == sectionKey &&
                 apollo.ConfigRepository == configRepository);
 
             if (previous != null)
@@ -89,10 +78,7 @@ namespace Com.Ctrip.Framework.Apollo
                 builder.Sources.Remove(previous);
                 builder.Sources.Add(previous);
             }
-            else
-            {
-                builder.Add(new ApolloConfigurationProvider(sectionKey, configRepository));
-            }
+            else builder.Add(new ApolloConfigurationProvider(configRepository));
 
             return builder;
         }

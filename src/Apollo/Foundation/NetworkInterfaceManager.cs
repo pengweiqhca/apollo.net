@@ -18,7 +18,8 @@ public class NetworkInterfaceManager
                 .Select(network => network.GetIPProperties())
                 .OrderByDescending(properties => properties.GatewayAddresses.Count)
                 .SelectMany(properties => properties.UnicastAddresses)
-                .Where(address => !IPAddress.IsLoopback(address.Address) && address.Address.AddressFamily == AddressFamily.InterNetwork)
+                .Where(address => !IPAddress.IsLoopback(address.Address) &&
+                    address.Address.AddressFamily == AddressFamily.InterNetwork)
                 .Select(address => address.Address.ToString())
                 .ToArray();
 
@@ -42,7 +43,8 @@ public class NetworkInterfaceManager
         }
         catch (Exception ex)
         {
-            LogManager.CreateLogger(typeof(NetworkInterfaceManager)).Error($"Can not get local ip address with prefer option '{preferSubnet}'.", ex);
+            LogManager.CreateLogger(typeof(NetworkInterfaceManager))
+                .Error($"Can not get local ip address with prefer option '{preferSubnet}'.", ex);
         }
 
         return HostIp;
@@ -56,13 +58,11 @@ public class NetworkInterfaceManager
 
             foreach (var ip in ips)
             {
-                if (string.IsNullOrEmpty(ip)) continue;
+                if (string.IsNullOrEmpty(ip) || !IsInSubnet(ip, cidr)) continue;
 
-                if (IsInSubnet(ip, cidr))
-                {
-                    matchedIp = ip;
-                    return true;
-                }
+                matchedIp = ip;
+
+                return true;
             }
         }
 

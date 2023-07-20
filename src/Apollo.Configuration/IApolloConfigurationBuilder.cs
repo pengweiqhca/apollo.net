@@ -4,5 +4,5 @@ namespace Com.Ctrip.Framework.Apollo;
 
 public interface IApolloConfigurationBuilder : IConfigurationBuilder
 {
-    ConfigRepositoryFactory ConfigRepositoryFactory { get; }
+    IConfigRepositoryFactory ConfigRepositoryFactory { get; }
 }

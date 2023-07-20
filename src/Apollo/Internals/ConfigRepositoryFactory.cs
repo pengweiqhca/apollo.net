@@ -4,7 +4,7 @@ using Com.Ctrip.Framework.Apollo.Util.Http;
 
 namespace Com.Ctrip.Framework.Apollo.Internals;
 
-public class ConfigRepositoryFactory : IConfigRepositoryFactory, IDisposable
+internal class ConfigRepositoryFactory : IConfigRepositoryFactory, IDisposable
 {
     private readonly HttpUtil _httpUtil;
     private readonly ConcurrentDictionary<string, IConfigRepository> _configRepositories = new();
@@ -25,21 +25,23 @@ public class ConfigRepositoryFactory : IConfigRepositoryFactory, IDisposable
 
     private IConfigRepository CreateConfigRepository(string @namespace)
     {
-        if (Env.Local.Equals(_options.Env))
-        {
-            LogManager.CreateLogger(typeof(ConfigRepositoryFactory)).Warn($"==== Apollo is in local mode! Won't pull configs '{@namespace}' from remote server! ====");
-            return new LocalFileConfigRepository(@namespace, _options);
-        }
+        if (_options is not { Env: Env.Local })
+            return new LocalFileConfigRepository(@namespace, _options,
+                new RemoteConfigRepository(@namespace, _options, _httpUtil, _serviceLocator,
+                    _remoteConfigLongPollService));
 
-        return new LocalFileConfigRepository(@namespace, _options, new RemoteConfigRepository(@namespace, _options, _httpUtil, _serviceLocator, _remoteConfigLongPollService));
+        LogManager.CreateLogger(typeof(ConfigRepositoryFactory))
+            .Warn($"==== Apollo is in local mode! Won't pull configs '{@namespace}' from remote server! ====");
+
+        return new LocalFileConfigRepository(@namespace, _options);
     }
 
     public void Dispose()
     {
         _remoteConfigLongPollService.Dispose();
-        _serviceLocator.Dispose();
-        _httpUtil.Dispose();
 
-        GC.SuppressFinalize(this);
+        _serviceLocator.Dispose();
+
+        _httpUtil.Dispose();
     }
 }

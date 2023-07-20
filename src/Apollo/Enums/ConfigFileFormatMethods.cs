@@ -2,17 +2,14 @@
 
 internal static class ConfigFileFormatMethods
 {
-    public static string GetString(this ConfigFileFormat format)
+    public static string GetString(this ConfigFileFormat format) => format switch
     {
-        return format switch
-        {
-            ConfigFileFormat.Properties => "properties",
-            ConfigFileFormat.Xml => "xml",
-            ConfigFileFormat.Json => "json",
-            ConfigFileFormat.Yml => "yml",
-            ConfigFileFormat.Yaml => "yaml",
-            ConfigFileFormat.Txt => "txt",
-            _ => "unknown",
-        };
-    }
+        ConfigFileFormat.Properties => "properties",
+        ConfigFileFormat.Xml => "xml",
+        ConfigFileFormat.Json => "json",
+        ConfigFileFormat.Yml => "yml",
+        ConfigFileFormat.Yaml => "yaml",
+        ConfigFileFormat.Txt => "txt",
+        _ => "unknown",
+    };
 }

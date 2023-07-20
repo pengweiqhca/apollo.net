@@ -20,8 +20,7 @@ public class NodeReplaceSectionBuilder : ApolloConfigurationBuilder
 
         if (string.IsNullOrWhiteSpace(_key)) _key = rawXml.Name;
 
-        if (!GetConfig().TryGetProperty(_key!, out var xml) ||
-            string.IsNullOrWhiteSpace(xml))
+        if (!GetConfig().TryGetProperty(_key!, out var xml) || string.IsNullOrWhiteSpace(xml))
             return base.ProcessRawXml(rawXml);
 
         var doc = new XmlDocument();

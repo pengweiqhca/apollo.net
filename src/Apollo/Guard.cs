@@ -15,19 +15,14 @@ internal static class Guard
     public static T ThrowIfNull<T>([NotNull][ValidatedNotNull] this T? argument,
         [CallerArgumentExpression(nameof(argument))] string? paramName = null)
     {
-#if NETFRAMEWORK
         if (argument == null) ThrowArgumentNullException(paramName);
-#else
-        ArgumentNullException.ThrowIfNull(argument, paramName);
-#endif
+
         return argument;
     }
 
-#if NETFRAMEWORK
     [DoesNotReturn]
     [DebuggerHidden]
     private static void ThrowArgumentNullException(string? paramName) => throw new ArgumentNullException(paramName);
-#endif
 
     [DoesNotReturn]
     [DebuggerHidden]

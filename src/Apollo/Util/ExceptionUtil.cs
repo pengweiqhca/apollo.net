@@ -2,10 +2,9 @@
 
 internal static class ExceptionUtil
 {
-    public static string GetDetailMessage(this Exception? ex)
+    public static FormattableString GetDetailMessage(this Exception? ex)
     {
-        if (ex == null || string.IsNullOrEmpty(ex.Message))
-            return string.Empty;
+        if (ex == null || string.IsNullOrEmpty(ex.Message)) return $"";
 
         var builder = new StringBuilder(ex.Message);
         ICollection<Exception> causes = new LinkedList<Exception>();
@@ -35,6 +34,6 @@ internal static class ExceptionUtil
 
         builder.Append(new string(']', counter));
 
-        return builder.ToString();
+        return $"{builder}";
     }
 }

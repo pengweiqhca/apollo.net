@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿using Com.Ctrip.Framework.Apollo.Internals;
+using System.Configuration;
 
 namespace Com.Ctrip.Framework.Apollo;
 
@@ -24,14 +25,12 @@ public class ConnectionStringsSectionBuilder : ApolloConfigurationBuilder
         var connectionStrings = section.ConnectionStrings;
 
         lock (_lock)
-        {
             foreach (var connectionString in GetConfig().GetConnectionStrings(_keyPrefix ?? configSection.SectionInformation.Name, _defaultProviderName))
             {
                 connectionStrings.Remove(connectionString.Name);
 
                 connectionStrings.Add(connectionString);
             }
-        }
 
         return base.ProcessConfigurationSection(configSection);
     }

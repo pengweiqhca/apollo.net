@@ -1,10 +1,24 @@
 ﻿using Com.Ctrip.Framework.Apollo;
+using Com.Ctrip.Framework.Apollo.Internals;
 using Xunit;
 
 namespace Apollo.ConfigurationManager.Tests;
 
 public class ConfigExtensionsTest
 {
+    private class FakeConfig : IConfig
+    {
+        private readonly IReadOnlyDictionary<string, string> _data;
+
+        public event Action<IConfig>? ConfigChanged = default;
+
+        public FakeConfig(IReadOnlyDictionary<string, string> data) => _data = data;
+
+        public IEnumerable<string> GetPropertyNames() => _data.Keys;
+
+        public bool TryGetProperty(string key, [NotNullWhen(true)] out string? value) => _data.TryGetValue(key, out value);
+    }
+
     [Fact]
     public void GetChildren()
     {
@@ -59,7 +73,7 @@ public class ConfigExtensionsTest
         config = config.WithPrefix("a");
 
         Assert.Equal(new[] { "B", "c", "C:d" }, config.GetPropertyNames());
-        Assert.Equal(new[] { "1", "2", "4" }, config.GetPropertyNames().Select(p => config.GetProperty(p, "")));
+        Assert.Equal(new[] { "1", "2", "4" }, config.GetPropertyNames().Select(p => config.TryGetProperty(p, out var v) ? v : ""));
     }
 
     private static KeyValuePair<string, string> Create(string key, string value) => new(key, value);

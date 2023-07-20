@@ -6,7 +6,11 @@ public class ApolloConfigStatusCodeException : Exception
         : base($"[status code: {statusCode:D}] {message}")
     {
         StatusCode = statusCode;
+
+        FormattableMessage = $"[status code: {statusCode:D}] {message}";
     }
 
     public virtual HttpStatusCode StatusCode { get; }
+
+    public FormattableString FormattableMessage { get; }
 }

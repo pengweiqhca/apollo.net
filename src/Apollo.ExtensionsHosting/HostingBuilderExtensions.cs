@@ -15,8 +15,8 @@ public static class HostingBuilderExtensions
 #endif
 {
     /// <param name="hostBuilder"></param>
-    /// <param name="fromAppConfiguration">apollo配置源，false：环境变量、命令行之类；true：appsettings.json之类</param>
-    /// <param name="key">apollo配置前缀</param>
+    /// <param name="fromAppConfiguration">apollo config source. false: environment variables, commandline and so on, true：appsettings.json and so on</param>
+    /// <param name="key">apollo config prefix</param>
     public static IHostBuilder AddApollo(this IHostBuilder hostBuilder, bool fromAppConfiguration = true,
         string key = "apollo")
     {

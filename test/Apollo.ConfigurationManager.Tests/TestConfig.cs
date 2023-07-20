@@ -1,5 +1,6 @@
 ﻿using Com.Ctrip.Framework.Apollo;
 using Com.Ctrip.Framework.Apollo.Core.Utils;
+using Com.Ctrip.Framework.Apollo.Internals;
 
 namespace Apollo.ConfigurationManager.Tests;
 
@@ -39,5 +40,5 @@ public class TestConfig : IConfig
 
     public IEnumerable<string> GetPropertyNames() => _dict.Keys;
 
-    public event ConfigChangeEvent? ConfigChanged = default;
+    public event Action<IConfig>? ConfigChanged = default;
 }

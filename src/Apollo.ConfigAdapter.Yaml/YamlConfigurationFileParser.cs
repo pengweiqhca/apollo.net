@@ -20,7 +20,7 @@ internal sealed class YamlConfigurationFileParser
         if (yamlStream.Documents.Count < 1 || yamlStream.Documents[0].RootNode is not YamlMappingNode mappingNode) return _data;
 
         foreach (var node in mappingNode.Children)
-            if (node.Key is YamlScalarNode { Value: { } } ysn)
+            if (node.Key is YamlScalarNode { Value: not null } ysn)
                 VisitYamlNode(ysn.Value, node.Value);
             else
                 throw UnsupportedKeyType(node.Key, _currentPath);
@@ -76,7 +76,7 @@ internal sealed class YamlConfigurationFileParser
         {
             foreach (var node in refer.Children)
             {
-                if (!(node.Key is YamlScalarNode ysn)) throw UnsupportedKeyType(node.Key, _currentPath);
+                if (node.Key is not YamlScalarNode ysn) throw UnsupportedKeyType(node.Key, _currentPath);
 
                 if (ysn.Value == "<<")
                     switch (node.Value)
@@ -131,6 +131,5 @@ internal sealed class YamlConfigurationFileParser
     }
 
     private static bool IsNullValue(YamlScalarNode yamlValue) =>
-        yamlValue.Style == ScalarStyle.Plain &&
-        yamlValue.Value is "~" or null or "null" or "Null" or "NULL";
+        yamlValue is { Style: ScalarStyle.Plain, Value: "~" or null or "null" or "Null" or "NULL" };
 }

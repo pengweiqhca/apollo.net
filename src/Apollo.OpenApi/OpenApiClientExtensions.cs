@@ -97,7 +97,7 @@ internal static class OpenApiClientExtensions
             var msg = JsonSerializer.Deserialize<ExceptionMessage>(body, Options);
 
             ex = msg == null
-                ? new ApolloOpenApiException(response.StatusCode, response.ReasonPhrase, body)
+                ? new(response.StatusCode, response.ReasonPhrase, body)
                 : new ApolloOpenApiException(response.StatusCode, string.IsNullOrEmpty(response.ReasonPhrase) ? msg.Exception : response.ReasonPhrase, msg.Message);
         }
         catch (Exception e)

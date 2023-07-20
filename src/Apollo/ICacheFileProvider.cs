@@ -4,26 +4,26 @@ namespace Com.Ctrip.Framework.Apollo;
 
 public interface ICacheFileProvider
 {
-    Properties? Get(string configFile);
+    Task<Properties> Get(string configFile);
 
-    void Save(string configFile, Properties properties);
+    Task Save(string configFile, Properties properties);
 }
 
 public class LocalPlaintextCacheFileProvider : ICacheFileProvider
 {
-    public Properties? Get(string configFile)
+    public async Task<Properties> Get(string configFile)
     {
-        if (!File.Exists(configFile)) return null;
+        if (!File.Exists(configFile)) return new();
 
         using var reader = new FileStream(configFile, FileMode.Open);
 
-        return new(reader);
+        return await Properties.Read(reader).ConfigureAwait(false);
     }
 
-    public void Save(string configFile, Properties properties)
+    public async Task Save(string configFile, Properties properties)
     {
         using var file = new FileStream(configFile, FileMode.Create);
 
-        properties.ThrowIfNull().Store(file);
+        await properties.ThrowIfNull().Store(file).ConfigureAwait(false);
     }
 }

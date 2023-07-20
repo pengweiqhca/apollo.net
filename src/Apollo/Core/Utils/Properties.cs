@@ -12,14 +12,9 @@ public class Properties
 
     public Properties(Properties source) => _dict = new(source.ThrowIfNull()._dict, StringComparer.OrdinalIgnoreCase);
 
-    public Properties(Stream stream)
-    {
-        if (stream == null) throw new ArgumentNullException(nameof(stream));
-
-        var dict = JsonSerializer.Deserialize<IDictionary<string, string>>(stream);
-
-        _dict = dict == null ? new(StringComparer.OrdinalIgnoreCase) : new(dict, StringComparer.OrdinalIgnoreCase);
-    }
+    public static async Task<Properties> Read(Stream stream) => stream == null
+        ? throw new ArgumentNullException(nameof(stream))
+        : new(await JsonSerializer.DeserializeAsync<IDictionary<string, string>>(stream).ConfigureAwait(false));
 
     internal Properties SpecialDelimiter(IReadOnlyCollection<string>? specialDelimiter)
     {
@@ -52,10 +47,7 @@ public class Properties
 
     public ISet<string> GetPropertyNames() => new HashSet<string>(_dict.Keys);
 
-    public void Store(Stream stream)
-    {
-        if (stream == null) throw new ArgumentNullException(nameof(stream));
-
-        JsonSerializer.Serialize(stream, _dict);
-    }
+    public Task Store(Stream stream) => stream == null
+        ? throw new ArgumentNullException(nameof(stream))
+        : JsonSerializer.SerializeAsync(stream, _dict);
 }

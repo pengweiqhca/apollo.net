@@ -23,7 +23,7 @@ public class ConfigServiceLocatorTest
 
         var services = await locator.GetConfigServices().ConfigureAwait(false);
 
-        Assert.Equal(1, services.Count);
+        Assert.Single(services);
         Assert.Equal(options.MetaServer, services[0].HomepageUrl);
     }
 
@@ -39,7 +39,7 @@ public class ConfigServiceLocatorTest
 
         var services = await locator.GetConfigServices().ConfigureAwait(false);
 
-        Assert.Equal(1, services.Count);
+        Assert.Single(services);
         Assert.Equal(options.ConfigServer?.FirstOrDefault(), services[0].HomepageUrl);
     }
 }

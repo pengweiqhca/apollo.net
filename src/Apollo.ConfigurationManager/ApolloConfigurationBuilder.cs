@@ -1,5 +1,4 @@
-﻿using Com.Ctrip.Framework.Apollo.Model;
-using System.Configuration;
+﻿using System.Configuration;
 using System.Reflection;
 using System.Xml;
 
@@ -8,7 +7,9 @@ namespace Com.Ctrip.Framework.Apollo;
 public abstract class ApolloConfigurationBuilder : ConfigurationBuilder
 {
     private static readonly object Lock = new();
-    private static readonly FieldInfo ConfigurationManagerReset = typeof(ConfigurationManager).GetField("s_initState", BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    private static readonly FieldInfo ConfigurationManagerReset =
+        typeof(ConfigurationManager).GetField("s_initState", BindingFlags.NonPublic | BindingFlags.Static)!;
 
     public static bool AppSettingsInitialized { get; private set; }
 
@@ -20,7 +21,8 @@ public abstract class ApolloConfigurationBuilder : ConfigurationBuilder
 
     public override void Initialize(string name, NameValueCollection config)
     {
-        Namespaces = config.ThrowIfNull()["namespace"]?.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+        Namespaces = config.ThrowIfNull()["namespace"]
+            ?.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
         if (this is not AppSettingsSectionBuilder)
         {
@@ -49,13 +51,7 @@ public abstract class ApolloConfigurationBuilder : ConfigurationBuilder
 
             if (_config != null) return _config;
 
-            Task<IConfig> config;
-            if (Namespaces == null || Namespaces.Count == 0)
-#pragma warning disable 618
-                config = ApolloConfigurationManager.GetAppConfig();
-            else config = Namespaces.Count == 1 ? ApolloConfigurationManager.GetConfig(Namespaces[0]) : ApolloConfigurationManager.GetConfig(Namespaces);
-#pragma warning restore 618
-            _config = config.ConfigureAwait(false).GetAwaiter().GetResult();
+            _config = ApolloConfigurationManager.GetConfig(Namespaces).GetAwaiter().GetResult();
 
             _config.ConfigChanged += Config_ConfigChanged;
         }
@@ -63,7 +59,7 @@ public abstract class ApolloConfigurationBuilder : ConfigurationBuilder
         return _config;
     }
 
-    private void Config_ConfigChanged(IConfig config, ConfigChangeEventArgs args)
+    private void Config_ConfigChanged(IConfig config)
     {
         try
         {

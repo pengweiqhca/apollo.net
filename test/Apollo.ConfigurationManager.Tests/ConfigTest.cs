@@ -2,11 +2,9 @@
 using Com.Ctrip.Framework.Apollo.Core;
 using Com.Ctrip.Framework.Apollo.Core.Utils;
 using Com.Ctrip.Framework.Apollo.Internals;
-using Com.Ctrip.Framework.Apollo.Model;
-using Com.Ctrip.Framework.Apollo.Spi;
 using Xunit;
 
-namespace Apollo.Tests;
+namespace Apollo.ConfigurationManager.Tests;
 
 public class ConfigTest
 {
@@ -18,12 +16,12 @@ public class ConfigTest
 
         var config = await CreateConfig(repositoryFactory).ConfigureAwait(false);
 
-        Assert.Equal("3", config.GetProperty("A", ""));
+        Assert.Equal("3", GetProperty(config, "A", ""));
 
-        ConfigChangeEventArgs? args = null;
-        config.ConfigChanged += (sender, e) => args = e;
+        IConfig? args = null;
+        config.ConfigChanged += sender => args = sender;
 
-        repositoryFactory.Change(new(new Dictionary<string, string>()));
+        await repositoryFactory.Change(new(new Dictionary<string, string>()));
 
         await Task.Delay(100).ConfigureAwait(false);
 
@@ -36,20 +34,21 @@ public class ConfigTest
         var repositoryFactories = new[]
         {
             new FakeConfigRepository(ConfigConsts.NamespaceApplication,
-                new(new Dictionary<string, string> {["A"] = "3", ["B"] = "3"})),
+                new(new Dictionary<string, string> { ["A"] = "3", ["B"] = "3" })),
             new FakeConfigRepository(ConfigConsts.NamespaceApplication,
-                new(new Dictionary<string, string> {["B"] = "4"})),
+                new(new Dictionary<string, string> { ["B"] = "4" })),
         };
 
-        var config = new MultiConfig(await Task.WhenAll(repositoryFactories.Select(CreateConfig).Reverse()).ConfigureAwait(false));
+        var config = new MultiConfig(await Task.WhenAll(repositoryFactories.Select(CreateConfig).Reverse())
+            .ConfigureAwait(false));
 
-        Assert.Equal("3", config.GetProperty("A", ""));
-        Assert.Equal("4", config.GetProperty("B", ""));
+        Assert.Equal("3", GetProperty(config, "A", ""));
+        Assert.Equal("4", GetProperty(config, "B", ""));
 
-        ConfigChangeEventArgs? args = null;
-        config.ConfigChanged += (sender, e) => args = e;
+        IConfig? args = null;
+        config.ConfigChanged += sender => args = sender;
 
-        repositoryFactories[1].Change(new(new Dictionary<string, string>()));
+        await repositoryFactories[1].Change(new(new Dictionary<string, string>()));
 
         await Task.Delay(100).ConfigureAwait(false);
 
@@ -57,21 +56,25 @@ public class ConfigTest
 
         args = null;
 
-        repositoryFactories[1].Change(new(new Dictionary<string, string> { ["B"] = "3" }));
+        await repositoryFactories[1].Change(new(new Dictionary<string, string> { ["B"] = "3" }));
 
         await Task.Delay(100).ConfigureAwait(false);
 
         Assert.Null(args);
     }
 
+    public static string GetProperty(IConfig config, string key, string defaultValue) =>
+        config.TryGetProperty(key, out var value) ? value : defaultValue;
+
     private static Task<IConfig> CreateConfig(FakeConfigRepository repositoryFactory) =>
-        new DefaultConfigManager(new DefaultConfigRegistry(), repositoryFactory).GetConfig(repositoryFactory.Namespace);
+        new ConfigManager(repositoryFactory).GetConfig(repositoryFactory.Namespace);
 
     private class FakeConfigRepository : AbstractConfigRepository, IConfigRepositoryFactory
     {
         private Properties _properties;
 
-        public FakeConfigRepository(string @namespace, Properties properties) : base(@namespace) => _properties = properties;
+        public FakeConfigRepository(string @namespace, Properties properties) : base(@namespace) =>
+            _properties = properties;
 
         public override Properties GetConfig() => _properties;
 
@@ -81,11 +84,11 @@ public class ConfigTest
 
         protected override void Dispose(bool disposing) { }
 
-        public void Change(Properties properties)
+        public Task Change(Properties properties)
         {
             _properties = properties;
 
-            FireRepositoryChange(Namespace, properties);
+            return FireRepositoryChange(Namespace, properties);
         }
     }
 }

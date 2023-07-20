@@ -3,11 +3,13 @@ using Com.Ctrip.Framework.Apollo.Logging;
 
 namespace Com.Ctrip.Framework.Apollo.Internals;
 
-public abstract class AbstractConfigRepository : IConfigRepository
+internal abstract class AbstractConfigRepository : IConfigRepository
 {
-    private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(AbstractConfigRepository));
+    private static readonly Func<Action<LogLevel, FormattableString, Exception?>> Logger = static () =>
+        LogManager.CreateLogger(typeof(AbstractConfigRepository));
 
     private readonly List<IRepositoryChangeListener> _listeners = new();
+    private readonly SemaphoreSlim _waitHandle = new(1, 1);
 
     public string Namespace { get; }
 
@@ -19,44 +21,66 @@ public abstract class AbstractConfigRepository : IConfigRepository
 
     public void AddChangeListener(IRepositoryChangeListener listener)
     {
-        lock (_listeners)
-            if (!_listeners.Contains(listener)) _listeners.Add(listener);
+        _waitHandle.Wait();
+
+        try
+        {
+            if (!_listeners.Contains(listener))
+                _listeners.Add(listener);
+        }
+        finally
+        {
+            _waitHandle.Release();
+        }
     }
 
     public void RemoveChangeListener(IRepositoryChangeListener listener)
     {
-        lock (_listeners)
+        _waitHandle.Wait();
+
+        try
+        {
             _listeners.Remove(listener);
+        }
+        finally
+        {
+            _waitHandle.Release();
+        }
     }
 
-    protected void FireRepositoryChange(string namespaceName, Properties newProperties)
+    protected async Task FireRepositoryChange(string namespaceName, Properties newProperties)
     {
-        lock (_listeners)
-            foreach (var listener in _listeners)
-            {
-                try
-                {
-                    listener.OnRepositoryChange(namespaceName, newProperties);
-                }
-                catch (Exception ex)
-                {
-                    Logger().Error($"Failed to invoke repository change listener {listener.GetType()}", ex);
-                }
-            }
+        await _waitHandle.WaitAsync().ConfigureAwait(false);
+
+        try
+        {
+            await Task.WhenAll(_listeners.Select(listener =>
+                listener.OnRepositoryChange(namespaceName, newProperties))).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Logger().Error($"Failed to invoke repository change listener.", ex);
+        }
+        finally
+        {
+            _waitHandle.Release();
+        }
     }
 
     #region Dispose
+
     public void Dispose()
     {
+        _waitHandle.Dispose();
+
         Dispose(true);
+
         GC.SuppressFinalize(this);
     }
 
     protected abstract void Dispose(bool disposing);
 
-    ~AbstractConfigRepository()
-    {
-        Dispose(false);
-    }
+    ~AbstractConfigRepository() => Dispose(false);
+
     #endregion
 }

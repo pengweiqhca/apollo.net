@@ -22,7 +22,7 @@ internal sealed class JsonConfigurationParser
 
         using (var doc = JsonDocument.Parse(input, jsonDocumentOptions))
         {
-            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+            if (doc.RootElement is not { ValueKind: JsonValueKind.Object })
                 throw new FormatException($"Top-level JSON element must be an object. Instead, '{doc.RootElement.ValueKind}' was found.");
 
             VisitObjectElement(doc.RootElement);

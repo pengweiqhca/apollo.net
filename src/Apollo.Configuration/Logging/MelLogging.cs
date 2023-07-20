@@ -9,7 +9,7 @@ public static class MelLogging
         loggerFactory.ThrowIfNull();
 #pragma warning disable CA1848, CA2254
         LogManager.LogFactory = logger =>
-            (level, msg, ex) => loggerFactory.CreateLogger(logger).Log(Convert(level), ex, msg);
+            (level, msg, ex) => loggerFactory.CreateLogger(logger).Log(Convert(level), ex, msg.Format, msg.GetArguments());
     }
 
     private static Microsoft.Extensions.Logging.LogLevel Convert(LogLevel level) => level switch

@@ -100,7 +100,7 @@ public static class NamespaceClientExtensions
     /// <see href="https://www.apolloconfig.com/#/zh/usage/apollo-open-api-platform?id=_3216-%e5%88%86%e9%a1%b5%e8%8e%b7%e5%8f%96%e9%85%8d%e7%bd%ae%e9%a1%b9%e6%8e%a5%e5%8f%a3" />
     public static async Task<PageModel<Item>> GetItems(this INamespaceClient client, int page = 0, int size = 50, CancellationToken cancellationToken = default)
     {
-        var result = await client.ThrowIfNull().Get<PageModel<Item>>($"envs/{client.Env}/apps/{client.AppId}/clusters/{client.Cluster}/namespaces/{client.Namespace}/items?page={page}&size={size}", cancellationToken);
+        var result = await client.ThrowIfNull().Get<PageModel<Item>>($"envs/{client.Env}/apps/{client.AppId}/clusters/{client.Cluster}/namespaces/{client.Namespace}/items?page={page}&size={size}", cancellationToken).ConfigureAwait(false);
 
         return result ?? new PageModel<Item>();
     }

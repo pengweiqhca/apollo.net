@@ -2,7 +2,7 @@
 
 internal static class QueryUtils
 {
-    public static string Build(IReadOnlyCollection<KeyValuePair<string, string>>? source)
+    public static string Build(IReadOnlyCollection<KeyValuePair<string, string?>>? source)
     {
         if (source == null || source.Count == 0) return string.Empty;
 

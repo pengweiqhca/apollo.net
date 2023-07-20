@@ -19,9 +19,7 @@ public class NetworkInterfaceManagerTests
     public void IsInSubnet_Expected(string[] address, string[] cidr, string? matchedIp)
     {
         if (matchedIp == null)
-        {
             Assert.False(NetworkInterfaceManager.IsInSubnet(address, cidr, out _));
-        }
         else
         {
             Assert.True(NetworkInterfaceManager.IsInSubnet(address, cidr, out var ip));

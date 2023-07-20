@@ -13,7 +13,7 @@ public interface IConfigAdapter
 
 public abstract class ContentConfigAdapter : IConfigAdapter
 {
-    private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ContentConfigAdapter));
+    private static readonly Func<Action<LogLevel, FormattableString, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ContentConfigAdapter));
 
     public Properties GetProperties(Properties properties)
     {
@@ -23,7 +23,7 @@ public abstract class ContentConfigAdapter : IConfigAdapter
 
         if (!string.IsNullOrWhiteSpace(content)) return GetProperties(content!);
 
-        Logger().Warn("Can not find " + ConfigConsts.ConfigFileContentKey);
+        Logger().Warn($"Can not find {ConfigConsts.ConfigFileContentKey}");
 
         return properties;
     }

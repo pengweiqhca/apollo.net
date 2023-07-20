@@ -10,7 +10,7 @@ public class ConfigUtil : IApolloOptions
 {
     public static NameValueCollection? AppSettings { get; set; }
 
-    private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ConfigUtil));
+    private static readonly Func<Action<LogLevel, FormattableString, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ConfigUtil));
     private static HttpMessageHandler _handler = new HttpClientHandler();
     private static ICacheFileProvider? _cacheFileProvider;
 
@@ -88,7 +88,7 @@ public class ConfigUtil : IApolloOptions
             if (string.IsNullOrWhiteSpace(appId))
             {
                 appId = ConfigConsts.NoAppidPlaceholder;
-                Logger().Warn("Apollo.AppId is not set, apollo will only load public namespace configurations!");
+                Logger().Warn($"Apollo.AppId is not set, apollo will only load public namespace configurations!");
             }
 
             return appId!;
