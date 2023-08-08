@@ -12,23 +12,7 @@ internal class ExponentialSchedulePolicy : ISchedulePolicy
         _delayTimeUpperBound = delayTimeUpperBound;
     }
 
-    public int Fail()
-    {
-        var delayTime = _lastDelayTime;
-
-        if (delayTime == 0)
-        {
-            delayTime = _delayTimeLowerBound;
-        }
-        else
-        {
-            delayTime = Math.Min(_lastDelayTime << 1, _delayTimeUpperBound);
-        }
-
-        _lastDelayTime = delayTime;
-
-        return delayTime;
-    }
+    public int Fail() => _lastDelayTime = _lastDelayTime == 0 ? _delayTimeLowerBound : Math.Min(_lastDelayTime << 1, _delayTimeUpperBound);
 
     public void Success() => _lastDelayTime = 0;
 }

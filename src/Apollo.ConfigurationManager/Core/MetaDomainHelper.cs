@@ -3,19 +3,16 @@ using Com.Ctrip.Framework.Apollo.Util;
 
 namespace Com.Ctrip.Framework.Apollo.Core;
 
-internal class MetaDomainHelper
+internal static class MetaDomainHelper
 {
-    public static string GetDomain(Env env)
+    public static string GetDomain(Env env) => env switch
     {
-        return env switch
-        {
-            Env.Dev => GetAppSetting("DEV.Meta", GetAppSetting("Meta:DEV", ConfigConsts.DefaultMetaServerUrl)),
-            Env.Fat => GetAppSetting("FAT.Meta", GetAppSetting("Meta:FAT", ConfigConsts.DefaultMetaServerUrl)),
-            Env.Uat => GetAppSetting("UAT.Meta", GetAppSetting("Meta:UAT", ConfigConsts.DefaultMetaServerUrl)),
-            Env.Pro => GetAppSetting("PRO.Meta", GetAppSetting("Meta:PRO", ConfigConsts.DefaultMetaServerUrl)),
-            _ => ConfigConsts.DefaultMetaServerUrl,
-        };
-    }
+        Env.Dev => GetAppSetting("DEV.Meta", GetAppSetting("Meta:DEV", ConfigConsts.DefaultMetaServerUrl)),
+        Env.Fat => GetAppSetting("FAT.Meta", GetAppSetting("Meta:FAT", ConfigConsts.DefaultMetaServerUrl)),
+        Env.Uat => GetAppSetting("UAT.Meta", GetAppSetting("Meta:UAT", ConfigConsts.DefaultMetaServerUrl)),
+        Env.Pro => GetAppSetting("PRO.Meta", GetAppSetting("Meta:PRO", ConfigConsts.DefaultMetaServerUrl)),
+        _ => ConfigConsts.DefaultMetaServerUrl,
+    };
 
     private static string GetAppSetting(string key, string defaultValue)
     {

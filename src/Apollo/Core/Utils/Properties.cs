@@ -1,11 +1,4 @@
-﻿#if NETFRAMEWORK
-using Newtonsoft.Json;
-#if NET40
-using System.Collections.ObjectModel;
-#endif
-#endif
-
-namespace Com.Ctrip.Framework.Apollo.Core.Utils;
+﻿namespace Com.Ctrip.Framework.Apollo.Core.Utils;
 
 public class Properties
 {
@@ -17,25 +10,13 @@ public class Properties
         ? new(StringComparer.OrdinalIgnoreCase)
         : new(dictionary, StringComparer.OrdinalIgnoreCase);
 
-    public Properties(Properties source) => _dict = new(source._dict, StringComparer.OrdinalIgnoreCase);
+    public Properties(Properties source) => _dict = new(source.ThrowIfNull()._dict, StringComparer.OrdinalIgnoreCase);
 
-    public Properties(Stream stream)
-    {
-        if (stream == null) throw new ArgumentNullException(nameof(stream));
-#if NETFRAMEWORK
-        using var textReader = new StreamReader(stream, Encoding.UTF8);
-        using var jsonTextReader = new JsonTextReader(textReader);
-        var dict = new JsonSerializer().Deserialize<IDictionary<string, string>>(jsonTextReader);
-#else
-        var dict = JsonSerializer.Deserialize<IDictionary<string, string>>(stream);
-#endif
-        _dict = dict == null ? new(StringComparer.OrdinalIgnoreCase) : new(dict, StringComparer.OrdinalIgnoreCase);
-    }
-#if NET40
-    internal Properties SpecialDelimiter(ReadOnlyCollection<string>? specialDelimiter)
-#else
+    public static async Task<Properties> Read(Stream stream) => stream == null
+        ? throw new ArgumentNullException(nameof(stream))
+        : new(await JsonSerializer.DeserializeAsync<IDictionary<string, string>>(stream).ConfigureAwait(false));
+
     internal Properties SpecialDelimiter(IReadOnlyCollection<string>? specialDelimiter)
-#endif
     {
         if (specialDelimiter == null || specialDelimiter.Count < 1) return this;
 
@@ -66,16 +47,7 @@ public class Properties
 
     public ISet<string> GetPropertyNames() => new HashSet<string>(_dict.Keys);
 
-    public void Store(Stream stream)
-    {
-        if (stream == null) throw new ArgumentNullException(nameof(stream));
-#if NETFRAMEWORK
-        using var textWriter = new StreamWriter(stream, Encoding.UTF8);
-        using var jsonTextWriter = new JsonTextWriter(textWriter);
-
-        new JsonSerializer().Serialize(jsonTextWriter, _dict);
-#else
-        JsonSerializer.Serialize(stream, _dict);
-#endif
-    }
+    public Task Store(Stream stream) => stream == null
+        ? throw new ArgumentNullException(nameof(stream))
+        : JsonSerializer.SerializeAsync(stream, _dict);
 }

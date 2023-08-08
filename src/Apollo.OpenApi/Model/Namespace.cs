@@ -13,9 +13,6 @@ public class Namespace : BaseModel
     public string? Format { get; set; }
 
     public bool IsPublic { get; set; }
-#if NET40
-    public IList<Item>? Items { get; set; }
-#else
+
     public IReadOnlyList<Item>? Items { get; set; }
-#endif
 }

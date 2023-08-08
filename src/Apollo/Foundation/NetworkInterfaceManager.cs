@@ -1,5 +1,5 @@
 ﻿using Com.Ctrip.Framework.Apollo.Logging;
-using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
@@ -18,32 +18,22 @@ public class NetworkInterfaceManager
                 .Select(network => network.GetIPProperties())
                 .OrderByDescending(properties => properties.GatewayAddresses.Count)
                 .SelectMany(properties => properties.UnicastAddresses)
-                .Where(address => !IPAddress.IsLoopback(address.Address) && address.Address.AddressFamily == AddressFamily.InterNetwork)
+                .Where(address => !IPAddress.IsLoopback(address.Address) &&
+                    address.Address.AddressFamily == AddressFamily.InterNetwork)
                 .Select(address => address.Address.ToString())
                 .ToArray();
 
-            if (HostIps.Length > 0)
-            {
-                HostIp = HostIps.First();
-            }
+            if (HostIps.Length > 0) HostIp = HostIps[0];
         }
         catch
         {
-            // ignored
-#if NETSTANDARD
             HostIps = Array.Empty<string>();
-#else
-            HostIps = new string[0];
-#endif
         }
     }
 
     public static string HostIp { get; } = "127.0.0.1";
-#if NET40
-    public static string GetHostIp(ReadOnlyCollection<string>? preferSubnet)
-#else
+
     public static string GetHostIp(IReadOnlyCollection<string>? preferSubnet)
-#endif
     {
         if (preferSubnet == null || preferSubnet.Count < 1) return HostIp;
 
@@ -53,7 +43,8 @@ public class NetworkInterfaceManager
         }
         catch (Exception ex)
         {
-            LogManager.CreateLogger(typeof(NetworkInterfaceManager)).Error($"Can not get local ip address with prefer option '{preferSubnet}'.", ex);
+            LogManager.CreateLogger(typeof(NetworkInterfaceManager))
+                .Error($"Can not get local ip address with prefer option '{preferSubnet}'.", ex);
         }
 
         return HostIp;
@@ -67,13 +58,11 @@ public class NetworkInterfaceManager
 
             foreach (var ip in ips)
             {
-                if (string.IsNullOrEmpty(ip)) continue;
+                if (string.IsNullOrEmpty(ip) || !IsInSubnet(ip, cidr)) continue;
 
-                if (IsInSubnet(ip, cidr))
-                {
-                    matchedIp = ip;
-                    return true;
-                }
+                matchedIp = ip;
+
+                return true;
             }
         }
 
@@ -90,7 +79,7 @@ public class NetworkInterfaceManager
 
         var address = BitConverter.ToInt32(IPAddress.Parse(ipAddress).GetAddressBytes(), 0);
 
-        var mask = IPAddress.HostToNetworkOrder(-1 << 32 - int.Parse(parts[1]));
+        var mask = IPAddress.HostToNetworkOrder(-1 << 32 - int.Parse(parts[1], CultureInfo.InvariantCulture));
 
         return (baseAddress & mask) == (address & mask);
     }

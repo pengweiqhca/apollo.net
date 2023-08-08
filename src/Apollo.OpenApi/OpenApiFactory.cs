@@ -14,8 +14,10 @@ public class OpenApiFactory : IOpenApiFactory
 
     public OpenApiFactory(OpenApiOptions options, Func<HttpMessageHandler> httpMessageHandlerFactory, bool disposeHandler)
     {
-        if (options.PortalUrl == null) throw new ArgumentNullException($"{nameof(options)}.{nameof(options.PortalUrl)}");
-        if (string.IsNullOrEmpty(options.Token)) throw new ArgumentNullException($"{nameof(options)}.{nameof(options.Token)}");
+        options.ThrowIfNull();
+        options.PortalUrl.ThrowIfNull();
+        options.Token.ThrowIfNull();
+
         _options = options;
 
         _baseUri = new UriBuilder(options.PortalUrl) { Path = "/openapi/v1/" }.Uri;
@@ -27,7 +29,7 @@ public class OpenApiFactory : IOpenApiFactory
         () => new(httpMessageHandlerFactory(), disposeHandler)
         {
             BaseAddress = _baseUri,
-            DefaultRequestHeaders = { Authorization = new(_options.Token) },
+            DefaultRequestHeaders = { Authorization = new(_options.Token.ThrowIfNull()) },
             Timeout = TimeSpan.FromMilliseconds(_options.Timeout)
         };
 

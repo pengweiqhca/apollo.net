@@ -32,10 +32,7 @@ internal class ConfigurationDemo
     public string GetConfig(string key)
     {
         var result = _config.GetValue(key, DefaultValue);
-        if (result.Equals(DefaultValue))
-        {
-            result = _anotherConfig.GetValue(key, DefaultValue);
-        }
+        if (result.Equals(DefaultValue, StringComparison.Ordinal)) result = _anotherConfig.GetValue(key, DefaultValue);
         var color = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("Loading key: {0} with value: {1}", key, result);
@@ -44,10 +41,7 @@ internal class ConfigurationDemo
         return result;
     }
 
-    private static void OnChanged(Value value, string name)
-    {
-        Console.WriteLine(name + " has changed: " + JsonSerializer.Serialize(value));
-    }
+    private static void OnChanged(Value value, string name) => Console.WriteLine(name + " has changed: " + JsonSerializer.Serialize(value));
 
     private class Value
     {

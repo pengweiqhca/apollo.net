@@ -13,17 +13,17 @@ public interface IConfigAdapter
 
 public abstract class ContentConfigAdapter : IConfigAdapter
 {
-    private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ContentConfigAdapter));
+    private static readonly Func<Action<LogLevel, FormattableString, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ContentConfigAdapter));
 
     public Properties GetProperties(Properties properties)
     {
-        if (properties.GetPropertyNames().Count < 1) return properties;
+        if (properties.ThrowIfNull().GetPropertyNames().Count < 1) return properties;
 
         var content = properties.GetProperty(ConfigConsts.ConfigFileContentKey);
 
         if (!string.IsNullOrWhiteSpace(content)) return GetProperties(content!);
 
-        Logger().Warn("Can not find " + ConfigConsts.ConfigFileContentKey);
+        Logger().Warn($"Can not find {ConfigConsts.ConfigFileContentKey}");
 
         return properties;
     }
@@ -46,6 +46,6 @@ public static class ConfigAdapterRegister
     public static void AddAdapter(ConfigFileFormat format, IConfigAdapter adapter) =>
         Dic[format] = adapter ?? throw new ArgumentNullException(nameof(adapter));
 
-    internal static bool TryGetAdapter(ConfigFileFormat format, out IConfigAdapter adapter) =>
+    internal static bool TryGetAdapter(ConfigFileFormat format, [NotNullWhen(true)] out IConfigAdapter? adapter) =>
         Dic.TryGetValue(format, out adapter);
 }

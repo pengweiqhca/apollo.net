@@ -1,30 +1,15 @@
-﻿#if NET40
-using WebUtility = System.Web.HttpUtility;
-#endif
-
-namespace Com.Ctrip.Framework.Apollo.Util;
+﻿namespace Com.Ctrip.Framework.Apollo.Util;
 
 internal static class QueryUtils
 {
-#if NET40
-    public static string Build(ICollection<KeyValuePair<string, string>>? source)
-#else
-    public static string Build(IReadOnlyCollection<KeyValuePair<string, string>>? source)
-#endif
+    public static string Build(IReadOnlyCollection<KeyValuePair<string, string?>>? source)
     {
-        if (source == null || source.Count == 0)
-        {
-            return "";
-        }
+        if (source == null || source.Count == 0) return string.Empty;
+
         var sb = new StringBuilder(source.Count * 32);
 
         foreach (var kv in source)
-        {
-            sb.Append('&');
-            sb.Append(WebUtility.UrlEncode(kv.Key));
-            sb.Append('=');
-            sb.Append(WebUtility.UrlEncode(kv.Value));
-        }
+            sb.Append('&').Append(WebUtility.UrlEncode(kv.Key)).Append('=').Append(WebUtility.UrlEncode(kv.Value));
 
         return sb.ToString(1, sb.Length - 1);
     }

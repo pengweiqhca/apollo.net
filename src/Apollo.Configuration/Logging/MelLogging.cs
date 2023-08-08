@@ -4,8 +4,13 @@ namespace Com.Ctrip.Framework.Apollo.Logging;
 
 public static class MelLogging
 {
-    public static void UseMel(ILoggerFactory loggerFactory) => LogManager.LogFactory = logger =>
-        (level, msg, ex) => loggerFactory.CreateLogger(logger).Log(Convert(level), ex, msg);
+    public static void UseMel(ILoggerFactory loggerFactory)
+    {
+        loggerFactory.ThrowIfNull();
+#pragma warning disable CA1848, CA2254
+        LogManager.LogFactory = logger =>
+            (level, msg, ex) => loggerFactory.CreateLogger(logger).Log(Convert(level), ex, msg.Format, msg.GetArguments());
+    }
 
     private static Microsoft.Extensions.Logging.LogLevel Convert(LogLevel level) => level switch
     {
@@ -18,4 +23,3 @@ public static class MelLogging
         _ => Microsoft.Extensions.Logging.LogLevel.None
     };
 }
-

@@ -1,18 +1,10 @@
 ﻿namespace Com.Ctrip.Framework.Apollo.Core.Dto;
 
-internal class ApolloConfigNotification
+internal sealed class ApolloConfigNotification
 {
-    private ApolloNotificationMessages? _messages;
-
-    public string NamespaceName { get; set; } = default!;
+    public string? NamespaceName { get; set; }
 
     public long NotificationId { get; set; }
 
-    public ApolloNotificationMessages? Messages
-    {
-        get => _messages;
-        set => _messages = value;
-    }
-
-    public override string ToString() => $"ApolloConfigNotification{{namespaceName='{NamespaceName}{'\''}, notificationId={NotificationId}{'}'}";
+    public ApolloNotificationMessages? Messages { get; set; }
 }

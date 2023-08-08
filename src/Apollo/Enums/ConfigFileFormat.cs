@@ -2,22 +2,5 @@
 
 public enum ConfigFileFormat
 {
-    Properties, Xml, Json, Yml, Yaml, Txt
-}
-
-internal static class ConfigFileFormatMethods
-{
-    public static string GetString(this ConfigFileFormat format)
-    {
-        return format switch
-        {
-            ConfigFileFormat.Properties => "properties",
-            ConfigFileFormat.Xml => "xml",
-            ConfigFileFormat.Json => "json",
-            ConfigFileFormat.Yml => "yml",
-            ConfigFileFormat.Yaml => "yaml",
-            ConfigFileFormat.Txt => "txt",
-            _ => "unknown",
-        };
-    }
+    Properties = 0, Xml = 1, Json = 2, Yml = 3, Yaml = 4, Txt = 5
 }

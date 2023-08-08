@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>Com.Ctrip.Framework.Apollo.AspNetCoreHosting</AssemblyName>
+    <DefineConstants>$(DefineConstants);Web</DefineConstants>
     <PackageReleaseNotes>发布日志请点击打开 https://github.com/apolloconfig/apollo.net/releases</PackageReleaseNotes>
     <Description>携程Apollo客户端
 
@@ -11,7 +12,7 @@
 
 $(PackageReleaseNotes)</Description>
     <RootNamespace>Microsoft.AspNetCore.Hosting</RootNamespace>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Version>$(ApolloVersion).1</Version>
   </PropertyGroup>
 

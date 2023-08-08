@@ -1,5 +1,6 @@
 ﻿using Com.Ctrip.Framework.Apollo;
 using Com.Ctrip.Framework.Apollo.ConfigAdapter;
+using Com.Ctrip.Framework.Apollo.Internals;
 using Xunit;
 
 namespace Apollo.ConfigurationManager.Tests;
@@ -180,9 +181,9 @@ public class PropertyPlaceholderHelperTest
         var resolved = new TestConfig(dic1).GetResolvedConfigurationPlaceholders().ToArray();
 
         // assert
-        Assert.Contains(resolved, f => f.Key == "foo");
-        Assert.DoesNotContain(resolved, f => f.Key == "bar");
-        Assert.Equal("baz", resolved.First(k => k.Key == "foo").Value);
+        Assert.Contains(resolved, f => f is { Key: "foo" });
+        Assert.DoesNotContain(resolved, f => f is { Key: "bar" });
+        Assert.Equal("baz", resolved.First(k => k is { Key: "foo" }).Value);
     }
 
     [Fact]
@@ -197,8 +198,8 @@ public class PropertyPlaceholderHelperTest
         var resolved = new TestConfig(dic1).GetResolvedConfigurationPlaceholders().ToArray();
 
         // assert
-        Assert.Contains(resolved, f => f.Key == "foo");
-        Assert.Equal(string.Empty, resolved.First(k => k.Key == "foo").Value);
+        Assert.Contains(resolved, f => f is { Key: "foo" });
+        Assert.Equal(string.Empty, resolved.First(k => k is { Key: "foo" }).Value);
     }
 #endif
     [Fact]

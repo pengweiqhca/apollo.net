@@ -4,7 +4,7 @@ using Com.Ctrip.Framework.Apollo.Foundation;
 
 namespace Com.Ctrip.Framework.Apollo;
 
-public class ApolloOptions : IApolloOptions
+public class ApolloOptions : IApolloOptions, IDisposable
 {
     /// <summary>
     /// Get the app id for the current application.
@@ -61,7 +61,9 @@ public class ApolloOptions : IApolloOptions
         get => _preferSubnet;
         set
         {
-            _preferSubnet = value; _localIp = null;
+            _preferSubnet = value;
+
+            _localIp = null;
         }
     }
 
@@ -83,7 +85,7 @@ public class ApolloOptions : IApolloOptions
 
             return ConfigConsts.DefaultMetaServerUrl;
         }
-        set => _metaServer = ConfigConsts.DefaultMetaServerUrl == value ? null : value;
+        set => _metaServer = value == ConfigConsts.DefaultMetaServerUrl ? null : value;
     }
 
     public string? Secret { get; set; }
@@ -91,10 +93,10 @@ public class ApolloOptions : IApolloOptions
     public IReadOnlyCollection<string>? ConfigServer { get; set; }
 
     /// <summary>ms. Default 5000ms</summary>
-    public virtual int Timeout { get; set; } = 5000; //5 secondss
+    public virtual int Timeout { get; set; } = 5000; // 5 secondss
 
     /// <summary>ms. Default 300,000ms</summary>
-    public virtual int RefreshInterval { get; set; } = 5 * 60 * 1000; //5 minutes
+    public virtual int RefreshInterval { get; set; } = 5 * 60 * 1000; // 5 minutes
 
     public string? LocalCacheDir { get; set; }
 
@@ -113,13 +115,6 @@ public class ApolloOptions : IApolloOptions
         }
     }
 
-    [Obsolete("Please using the HttpMessageHandler property to configure.", true)]
-    public Func<HttpMessageHandler> HttpMessageHandlerFactory
-    {
-        get => () => _handler;
-        set => HttpMessageHandler = value();
-    }
-
     public ICacheFileProvider CacheFileProvider { get; set; } = new LocalPlaintextCacheFileProvider();
 
     /// <inheritdoc />
@@ -127,5 +122,10 @@ public class ApolloOptions : IApolloOptions
 
     public IReadOnlyCollection<string>? SpecialDelimiter { get; set; }
 
-    public void Dispose() => _handler.Dispose();
+    public void Dispose()
+    {
+        _handler.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
 }

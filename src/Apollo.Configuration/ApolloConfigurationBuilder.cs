@@ -2,18 +2,13 @@
 
 namespace Com.Ctrip.Framework.Apollo;
 
-public interface IApolloConfigurationBuilder : IConfigurationBuilder
-{
-    ConfigRepositoryFactory ConfigRepositoryFactory { get; }
-}
-
-internal class ApolloConfigurationBuilder : IApolloConfigurationBuilder
+internal sealed class ApolloConfigurationBuilder : IApolloConfigurationBuilder
 {
     private readonly IConfigurationBuilder _builder;
 
-    public ConfigRepositoryFactory ConfigRepositoryFactory { get; }
+    public IConfigRepositoryFactory ConfigRepositoryFactory { get; }
 
-    public ApolloConfigurationBuilder(IConfigurationBuilder builder, ConfigRepositoryFactory configRepositoryFactory)
+    public ApolloConfigurationBuilder(IConfigurationBuilder builder, IConfigRepositoryFactory configRepositoryFactory)
     {
         _builder = builder;
 
@@ -25,5 +20,6 @@ internal class ApolloConfigurationBuilder : IApolloConfigurationBuilder
     public IConfigurationRoot Build() => _builder.Build();
 
     public IDictionary<string, object> Properties => _builder.Properties;
+
     public IList<IConfigurationSource> Sources => _builder.Sources;
 }

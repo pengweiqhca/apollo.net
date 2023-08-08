@@ -11,14 +11,14 @@ namespace Com.Ctrip.Framework.Apollo.Internals;
 internal class ConfigServiceLocator : IDisposable
 {
     private static readonly char[] MetaServerSeparator = { ',', ';' };
-    private static readonly Func<Action<LogLevel, string, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ConfigServiceLocator));
+    private static readonly Func<Action<LogLevel, FormattableString, Exception?>> Logger = () => LogManager.CreateLogger(typeof(ConfigServiceLocator));
 
     private readonly HttpUtil _httpUtil;
-
     private readonly IApolloOptions _options;
-    private volatile IList<ServiceDto> _configServices = new List<ServiceDto>();
-    private Task? _updateConfigServicesTask;
     private readonly Timer? _timer;
+    private readonly CancellationTokenSource _cts = new();
+    private IList<ServiceDto> _configServices = new List<ServiceDto>();
+    private Task? _updateConfigServicesTask;
 
     public ConfigServiceLocator(HttpUtil httpUtil, IApolloOptions configUtil)
     {
@@ -50,21 +50,19 @@ internal class ConfigServiceLocator : IDisposable
     public async Task<IList<ServiceDto>> GetConfigServices()
     {
         var services = _configServices;
-        if (services.Count == 0)
-            await UpdateConfigServices().ConfigureAwait(false);
+
+        if (services.Count == 0) await UpdateConfigServices().ConfigureAwait(false);
 
         services = _configServices;
-        if (services.Count == 0)
-            throw new ApolloConfigException("No available config service");
 
-        return services;
+        return services.Count == 0 ? throw new ApolloConfigException($"No available config service") : services;
     }
 
-    private async void SchedulePeriodicRefresh(object _)
+    private async void SchedulePeriodicRefresh(object? state)
     {
         try
         {
-            Logger().Debug("refresh config services");
+            Logger().Debug($"refresh config services");
 
             await UpdateConfigServices().ConfigureAwait(false);
         }
@@ -82,7 +80,7 @@ internal class ConfigServiceLocator : IDisposable
         lock (this)
             if ((task = _updateConfigServicesTask) == null)
             {
-                task = _updateConfigServicesTask = UpdateConfigServices(3);
+                task = _updateConfigServicesTask = UpdateConfigServices(3, _cts.Token);
 
                 _updateConfigServicesTask.ContinueWith(_ => _updateConfigServicesTask = null);
             }
@@ -90,17 +88,16 @@ internal class ConfigServiceLocator : IDisposable
         return task;
     }
 
-    private async Task UpdateConfigServices(int times)
+    private async Task UpdateConfigServices(int times, CancellationToken cancellationToken)
     {
         var url = AssembleMetaServiceUrl();
 
         Exception? exception = null;
 
         for (var index = 0; index < Math.Max(url.Count, times); index++)
-        {
             try
             {
-                var response = await _httpUtil.DoGetAsync<IList<ServiceDto>?>(url[index % url.Count]).ConfigureAwait(false);
+                var response = await _httpUtil.DoGetAsync<IList<ServiceDto>?>(url[index % url.Count], cancellationToken).ConfigureAwait(false);
                 var services = response.Body;
                 if (services == null || services.Count == 0) continue;
 
@@ -110,19 +107,15 @@ internal class ConfigServiceLocator : IDisposable
             }
             catch (Exception ex)
             {
-                Logger().Warn("Update config service fail from " + url[index % url.Count], ex);
+                Logger().Warn($"Update config service fail from {url[index % url.Count]}", ex);
 
                 exception = ex;
             }
-        }
 
         throw new ApolloConfigException($"Get config services failed from \"{string.Join(", ", url)}\"", exception!);
     }
-#if NET40
-    private IList<Uri> AssembleMetaServiceUrl() =>
-#else
+
     private IReadOnlyList<Uri> AssembleMetaServiceUrl() =>
-#endif
         (_options.MetaServer?
             .Split(MetaServerSeparator, StringSplitOptions.RemoveEmptyEntries)
             .Select(uri => Uri.TryCreate(uri, UriKind.Absolute, out _) ? uri : default!)
@@ -131,14 +124,14 @@ internal class ConfigServiceLocator : IDisposable
             .ToArray() ?? new[] { ConfigConsts.DefaultMetaServerUrl })
         .Select(uri =>
         {
-            if (uri[uri.Length - 1] != '/') uri += "/";
+            if (uri[^1] != '/') uri += "/";
 
             var uriBuilder = new UriBuilder(uri + "services/config");
 #if NETFRAMEWORK
-            //不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
-            var query = new Dictionary<string, string>();
+            // 不要使用HttpUtility.ParseQueryString()，.NET Framework里会死锁
+            var query = new Dictionary<string, string?>();
 #else
-            var query = HttpUtility.ParseQueryString("");
+            var query = HttpUtility.ParseQueryString(string.Empty);
 #endif
             query["appId"] = _options.AppId;
 
@@ -150,8 +143,15 @@ internal class ConfigServiceLocator : IDisposable
 #endif
             return uriBuilder.Uri;
         })
-        .OrderBy(_ => Guid.NewGuid())
+        .OrderBy(static _ => Guid.NewGuid())
         .ToArray();
 
-    public void Dispose() => _timer?.Dispose();
+    public void Dispose()
+    {
+        _timer?.Dispose();
+
+        _cts.Cancel();
+
+        _cts.Dispose();
+    }
 }

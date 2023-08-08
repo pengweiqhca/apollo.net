@@ -1,5 +1,5 @@
 ﻿using Com.Ctrip.Framework.Apollo.OpenApi;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace Apollo.OpenApi.Tests;
@@ -24,5 +24,5 @@ public abstract class BaseTest
 
     protected BaseTest(ITestOutputHelper output) => _output = output;
 
-    protected void Dump(object? obj) => _output.WriteLine(JsonConvert.SerializeObject(obj, Formatting.Indented));
+    protected void Dump(object? obj) => _output.WriteLine(JsonSerializer.Serialize(obj, new JsonSerializerOptions { WriteIndented = true }));
 }

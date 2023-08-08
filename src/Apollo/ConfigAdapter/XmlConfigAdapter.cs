@@ -2,11 +2,12 @@
 
 namespace Com.Ctrip.Framework.Apollo.ConfigAdapter;
 
-internal class XmlConfigAdapter  : ContentConfigAdapter
+internal sealed class XmlConfigAdapter : ContentConfigAdapter
 {
     public override Properties GetProperties(string content)
     {
         using var reader = new StringReader(content);
+
         return new(XmlConfigurationParser.Read(reader));
     }
 }

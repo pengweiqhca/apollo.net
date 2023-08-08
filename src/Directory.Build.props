@@ -3,6 +3,11 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
+    <!--https://docs.microsoft.com/zh-cn/dotnet/fundamentals/code-analysis/overview -->
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <EnableNETAnalyzers>True</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+
     <ApolloVersion>2.10</ApolloVersion>
     <AssemblyVersion>$(ApolloVersion).0</AssemblyVersion>
     <DebugSymbols>True</DebugSymbols>

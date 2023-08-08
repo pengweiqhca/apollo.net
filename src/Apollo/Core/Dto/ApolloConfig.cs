@@ -1,16 +1,14 @@
 ﻿namespace Com.Ctrip.Framework.Apollo.Core.Dto;
 
-internal class ApolloConfig
+internal sealed class ApolloConfig
 {
-    public string AppId { get; set; } = default!;
+    public string? AppId { get; set; }
 
-    public string Cluster { get; set; } = default!;
+    public string? Cluster { get; set; }
 
-    public string NamespaceName { get; set; } = default!;
+    public string? NamespaceName { get; set; }
 
-    public string ReleaseKey { get; set; } = default!;
+    public string? ReleaseKey { get; set; }
 
     public IDictionary<string, string>? Configurations { get; set; }
-
-    public override string ToString() => $"ApolloConfig{{appId='{AppId}{'\''}, cluster='{Cluster}{'\''}, namespaceName='{NamespaceName}{'\''}, configurations={Configurations}, releaseKey='{ReleaseKey}{'\''}{'}'}";
 }
