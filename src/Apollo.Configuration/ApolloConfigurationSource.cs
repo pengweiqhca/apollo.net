@@ -25,8 +25,4 @@ internal class ApolloConfigurationSource : IConfigurationSource
 
         return new ApolloConfigurationProvider(SectionKey, ConfigRepository);
     }
-
-    public override string ToString() => string.IsNullOrEmpty(SectionKey)
-        ? $"apollo {ConfigRepository}"
-        : $"apollo {ConfigRepository}[{SectionKey}]";
 }
