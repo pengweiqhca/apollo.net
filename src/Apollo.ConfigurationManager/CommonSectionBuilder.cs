@@ -114,14 +114,9 @@ public class CommonSectionBuilder : ApolloConfigurationBuilder
                         ex = ExceptionDispatchInfo.Capture(e);
                     }
 
-                if (ex == null)
-                {
-                    if (config.TryGetProperty(key, out var value))
-                        SetValue(configElement, cp, value);
-                }
-                else if (config.TryGetProperty(key, out var value))
-                    SetValue(configElement, cp, value);
-                else ex.Throw();
+                if (config.TryGetProperty(key, out var value2))
+                    SetValue(configElement, cp, value2);
+                else ex?.Throw();
             }
         }
     }
